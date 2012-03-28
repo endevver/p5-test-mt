@@ -22,9 +22,12 @@ plugins.
 
 use strict;
 use warnings;
-use Carp;
-use Data::Dumper;
 use Test::Most;
+use Package::Stash;
+
+require Carp;
+require Class::Load;
+require Data::Dumper;
 
 our $VERSION = 1.0.0;
 
