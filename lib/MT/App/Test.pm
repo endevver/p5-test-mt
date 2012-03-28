@@ -30,7 +30,7 @@ use Scalar::Util qw( blessed );
 use File::Temp   qw( tempfile );
 use File::Path   qw( make_path remove_tree );
 
-sub DEBUG { 1 }
+sub DEBUG { 0 }
 
 use base qw( MT::App );
 
