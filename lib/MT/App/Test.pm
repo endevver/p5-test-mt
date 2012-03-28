@@ -338,7 +338,7 @@ sub revert_component_init {
     # MT package scalar variables we need to reset
     my @global_scalars = qw(    plugin_sig         plugin_envelope
       plugin_registry    plugins_installed
-      $plugin_full_path                       );
+      plugin_full_path                       );
     my $c_hash    = \%MT::Components;    # Aliased...
     my $c_arry    = \@MT::Components;    #  for...
     my $p_hash    = \%MT::Plugins;       #   brevity!
