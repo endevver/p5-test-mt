@@ -51,12 +51,39 @@ BEGIN {
     }
     unshift( @INC, ( grep {-d $_ } @test_libs ));
 }
+
+sub construct_default {
+    my $pkg = shift;
+
+    my $test = $pkg->new();
+
+    require Test::MT::Environment;
+    my $env = Test::MT::Environment->new()
+        or die "Could not create \$test->env";
+
+    my $data = $env->init()
+                   ->init_db()
+                   ->init_data( file => './data/bootstrap_env.yaml' )
+                   or die "Could not create \$data";
+
+    my $env_data = $data->install()
+        or die "Could not create \$env_data";
+
+    my $app = $test->init_app()
+        or die "Could not create \$test->app";
+
+    $env->init_upgrade()
+        or die "Could not upgrade DB";
+
+    die 'Cannot app' unless $test->can('app');
+    $test->env( $env );
+    $test->app( $app );
+    $test;
 }
 
 =head1 SUBROUTINES/METHODS
 
 sub init { }
-sub test_basename {
 sub finish { }
 
 =cut
