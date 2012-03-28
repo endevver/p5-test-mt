@@ -162,7 +162,7 @@ sub test_basename {
     (split("::", ( ref $self || $self )))[1];
 }
 
-sub finish { }
+sub finish { shift }
 
 our $session_id;
 our $session_username = '';
