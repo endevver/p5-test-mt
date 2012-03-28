@@ -332,7 +332,7 @@ sub init_db {
 
     my $cfg;
     if ( -f $ref_db ) {
-        cp( $ref_db, $db_file ) or die "Copy failed: $!";
+        cp( $ref_db, $db_file ) or die "Copy failed from $ref_db to $db_file: $!";
 
         my $mt = MT->instance( Config => $self->config_file )
             or die "No MT object " . MT->errstr;
@@ -362,7 +362,7 @@ sub init_db {
             }
             die $msg;
         }
-        cp( $db_file, $ref_db ) or die "Copy failed: $!";
+        cp( $db_file, $ref_db ) or die "Copy failed from $db_file to $ref_db: $!";
     }
     $self;
 }
