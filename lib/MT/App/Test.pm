@@ -51,166 +51,6 @@ use lib 't/lib', 'extlib', 'lib', '../lib', '../extlib';
 use MT;
 
 
-
-
-
-# package Test::MT::ThemeManager::Base;
-# 
-# use lib $ENV{MT_HOME} ? ("$ENV{MT_HOME}/lib", "$ENV{MT_HOME}/extlib")
-#                       : ("./lib", "./extlib");
-# use lib qw( addons/Log4MT.plugin/lib addons/Log4MT.plugin/extlib );
-# use lib qw( addons/ConfigAssistant.pack/lib addons/ConfigAssistant.pack/extlib );
-# use lib qw( addons/ThemeManager.plugin/lib addons/ThemeManager.plugin/extlib );
-# 
-# use base qw( Class::Accessor::Fast Class::Data::Inheritable );
-# 
-# use MT::Util qw( caturl );
-# 
-# __PACKAGE__->mk_accessors(qw(   blog  user  users
-#                                 session_id  session_username  ));
-# 
-# # __PACKAGE__->mk_classdata(  );
-# 
-# BEGIN {
-#     # if MT_HOME is not set, set it
-#     unless ( $ENV{MT_HOME} ) {
-#         require Cwd;
-#         my $cwd    = Cwd::getcwd();
-#         my @pieces = File::Spec->splitdir($cwd);
-#         pop @pieces unless -e 'config.cgi' or -e 'mt-config.cgi';
-#         $ENV{MT_HOME} = File::Spec->catdir(@pieces);
-#     }
-# 
-#     # if MT_CONFIG is not set, set it
-#     if ( $ENV{MT_CONFIG} ) {
-#         if ( !File::Spec->file_name_is_absolute( $ENV{MT_CONFIG} ) ) {
-#             $ENV{MT_CONFIG}
-#               = File::Spec->catfile( $ENV{MT_HOME}, $ENV{MT_CONFIG} );
-#         }
-#     }
-#     else {
-#         use FindBin qw($Bin);
-#         my @dirs = ("$Bin/test.cfg",
-#                     qw( t/sqlite-test.cfg config.cgi mt-config.cgi ));
-#         $ENV{MT_CONFIG}
-#             = first { -e $_ }
-#               map { File::Spec->file_name_is_absolute( $_ )
-#                         ? $_ : File::Spec->catfile( $ENV{MT_HOME}, $_ )
-#                 } @dirs;
-#         print STDERR '$ENV{MT_CONFIG}: '.$ENV{MT_CONFIG}."\n";
-#     }
-#     chdir $ENV{MT_HOME};
-# 
-# } ## end BEGIN
-# 
-# BEGIN {
-#     my @path = File::Spec->splitdir( $ENV{MT_CONFIG} );
-#     $path[-1] = 'db';    # replace .cfg filename with 'db'
-#     my $ds_dir = File::Spec->catdir(@path);
-#     $path[-1] = 'ref';
-#     my $ref_dir = File::Spec->catdir(@path);
-#     $ENV{MT_DS_DIR}  = $ds_dir;
-#     $ENV{MT_REF_DIR} = $ref_dir;
-#     my $db_file = File::Spec->catfile( $ds_dir, 'mt.db' );
-# 
-#     if ( !-d $ds_dir ) {
-#         mkdir $ds_dir;
-#     }
-#     elsif ( -f $db_file ) {
-#         #`rm $db_file`;
-#     }
-# }
-
-
-
-# WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
-# WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
-# WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
-# WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
-# WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
-# WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
-# WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
-# WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
-# WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
-
-
-# package Test::MT::Base;
-# 
-# use lib $ENV{MT_HOME} ? ("$ENV{MT_HOME}/lib", "$ENV{MT_HOME}/extlib")
-#                       : ("./lib", "./extlib");
-# use lib qw( addons/Log4MT.plugin/lib addons/Log4MT.plugin/extlib );
-# 
-# use base qw( Class::Accessor::Fast Class::Data::Inheritable );
-# 
-# use MT::Util qw( caturl );
-# 
-# __PACKAGE__->mk_accessors(qw(   blog  user  users
-#                                 session_id  session_username  ));
-# 
-# # __PACKAGE__->mk_classdata(  );
-# 
-# BEGIN {
-#     # if MT_HOME is not set, set it
-#     unless ( $ENV{MT_HOME} ) {
-#         require Cwd;
-#         my $cwd    = Cwd::getcwd();
-#         my @pieces = File::Spec->splitdir($cwd);
-#         pop @pieces unless -e 'config.cgi' or -e 'mt-config.cgi';
-#         $ENV{MT_HOME} = File::Spec->catdir(@pieces);
-#     }
-# 
-#     # if MT_CONFIG is not set, set it
-#     if ( $ENV{MT_CONFIG} ) {
-#         if ( !File::Spec->file_name_is_absolute( $ENV{MT_CONFIG} ) ) {
-#             $ENV{MT_CONFIG}
-#               = File::Spec->catfile( $ENV{MT_HOME}, $ENV{MT_CONFIG} );
-#         }
-#     }
-#     else {
-#         use FindBin qw($Bin);
-#         my @dirs = ("$Bin/test.cfg",
-#                     qw( t/sqlite-test.cfg config.cgi mt-config.cgi ));
-#         $ENV{MT_CONFIG}
-#             = first { -e $_ }
-#               map { File::Spec->file_name_is_absolute( $_ )
-#                         ? $_ : File::Spec->catfile( $ENV{MT_HOME}, $_ )
-#                 } @dirs;
-#         print STDERR '$ENV{MT_CONFIG}: '.$ENV{MT_CONFIG}."\n";
-#     }
-#     chdir $ENV{MT_HOME};
-# 
-# } ## end BEGIN
-
-
-# WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
-# WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
-# WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
-# WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
-# WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
-# WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
-# WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
-# WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
-# WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
-
-
-
-
-
-
-=head1 SUBROUTINES/METHODS
-
-A separate section listing the public components of the module's interface.
-
-These normally consist of either subroutines that may be exported, or methods
-that may be called on objects belonging to the classes that the module
-provides.
-
-Name the section accordingly.
-
-In an object-oriented module, this section should begin with a sentence (of the
-form "An object of this class represents ...") to give the reader a high-level
-context to help them understand the methods that are subsequently described.
-
 =head2 init
 
 =cut
@@ -224,36 +64,6 @@ sub init {
     $self;
 }
 
-
-# sub init {
-#     my $mt    = shift;
-#     my %param = @_;
-# 
-#     $mt->bootstrap() unless $MT_DIR;
-#     $mt->{mt_dir}     = $MT_DIR;
-#     $mt->{config_dir} = $CFG_DIR;
-#     $mt->{app_dir}    = $APP_DIR;
-# 
-#     $mt->init_callbacks();
-# 
-#     ## Initialize the language to the default in case any errors occur in
-#     ## the rest of the initialization process.
-#     $mt->init_config( \%param ) or return;
-#     require MT::Plugin;
-#     $mt->init_addons(@_)        or return;
-#     $mt->init_config_from_db( \%param ) or return;
-#     $mt->init_debug_mode;
-#     $mt->init_plugins(@_)       or return;
-#     $plugins_installed = 1;
-#     $mt->init_schema();
-#     $mt->init_permissions();
-# 
-#     # Load MT::Log so constants are available
-#     require MT::Log;
-# 
-#     $mt->run_callbacks('post_init', $mt, \%param);
-#     return $mt;
-# }
 sub init_plugins {
     my $app = shift;
     my $cfg = $app->config;
@@ -384,19 +194,22 @@ sub revert_component_init {
     # as it does in its own init methods.
     foreach my $pdata ( values %$p_hash ) {
         my $path = first { defined($_) and m{\.pl}i }
-        $pdata->{object}{ "full_path", "path" };
+                    $pdata->{object}{ "full_path", "path" };
         next unless $path;
         delete $INC{$path} and $debug->("\t$path");
     }
 
-    return unless $param{reinit};
 
     # And finally: Re-initialize %MT::Components and @MT::Components
     # with only the 'core' component and undef %MT::Plugins completely
-    $c_arry = [$core];
-    $c_hash = { core => $core };
-    $p_hash = {};
+    @MT::Components = ( $core );
+    %MT::Components = ( core => $core );
+    %MT::Plugins    = ();
+    @MT::Plugins    = ();
 
+    $debug->( 'Final %MT::Components: ' . Dumper([keys %$c_hash]) );
+
+    return unless $param{reinit};
 
     # Find and initialize all non-core components
     #-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#
@@ -534,8 +347,11 @@ sub _run_tasks {
 =head2 _run_app
 
 =cut
-sub _run_app {
+sub run_app {
     my ( $class, $params, $level ) = @_;
+    warn 'In '.__PACKAGE__.'::run_app';
+    print 'In '.__PACKAGE__."::run_app\n";
+    print STDERR 'In '.__PACKAGE__."::run_app\n";
     $level ||= 0;
     require CGI;
     my $cgi              = CGI->new;
@@ -694,31 +510,160 @@ sub override_core_methods {
 
 __END__
 
-=head1 DIAGNOSTICS
+# package Test::MT::ThemeManager::Base;
+# 
+# use lib $ENV{MT_HOME} ? ("$ENV{MT_HOME}/lib", "$ENV{MT_HOME}/extlib")
+#                       : ("./lib", "./extlib");
+# use lib qw( addons/Log4MT.plugin/lib addons/Log4MT.plugin/extlib );
+# use lib qw( addons/ConfigAssistant.pack/lib addons/ConfigAssistant.pack/extlib );
+# use lib qw( addons/ThemeManager.plugin/lib addons/ThemeManager.plugin/extlib );
+# 
+# use base qw( Class::Accessor::Fast Class::Data::Inheritable );
+# 
+# use MT::Util qw( caturl );
+# 
+# __PACKAGE__->mk_accessors(qw(   blog  user  users
+#                                 session_id  session_username  ));
+# 
+# # __PACKAGE__->mk_classdata(  );
+# 
+# BEGIN {
+#     # if MT_HOME is not set, set it
+#     unless ( $ENV{MT_HOME} ) {
+#         require Cwd;
+#         my $cwd    = Cwd::getcwd();
+#         my @pieces = File::Spec->splitdir($cwd);
+#         pop @pieces unless -e 'config.cgi' or -e 'mt-config.cgi';
+#         $ENV{MT_HOME} = File::Spec->catdir(@pieces);
+#     }
+# 
+#     # if MT_CONFIG is not set, set it
+#     if ( $ENV{MT_CONFIG} ) {
+#         if ( !File::Spec->file_name_is_absolute( $ENV{MT_CONFIG} ) ) {
+#             $ENV{MT_CONFIG}
+#               = File::Spec->catfile( $ENV{MT_HOME}, $ENV{MT_CONFIG} );
+#         }
+#     }
+#     else {
+#         use FindBin qw($Bin);
+#         my @dirs = ("$Bin/test.cfg",
+#                     qw( t/sqlite-test.cfg config.cgi mt-config.cgi ));
+#         $ENV{MT_CONFIG}
+#             = first { -e $_ }
+#               map { File::Spec->file_name_is_absolute( $_ )
+#                         ? $_ : File::Spec->catfile( $ENV{MT_HOME}, $_ )
+#                 } @dirs;
+#         print STDERR '$ENV{MT_CONFIG}: '.$ENV{MT_CONFIG}."\n";
+#     }
+#     chdir $ENV{MT_HOME};
+# 
+# } ## end BEGIN
+# 
+# BEGIN {
+#     my @path = File::Spec->splitdir( $ENV{MT_CONFIG} );
+#     $path[-1] = 'db';    # replace .cfg filename with 'db'
+#     my $ds_dir = File::Spec->catdir(@path);
+#     $path[-1] = 'ref';
+#     my $ref_dir = File::Spec->catdir(@path);
+#     $ENV{MT_DS_DIR}  = $ds_dir;
+#     $ENV{MT_REF_DIR} = $ref_dir;
+#     my $db_file = File::Spec->catfile( $ds_dir, 'mt.db' );
+# 
+#     if ( !-d $ds_dir ) {
+#         mkdir $ds_dir;
+#     }
+#     elsif ( -f $db_file ) {
+#         #`rm $db_file`;
+#     }
+# }
 
-A list of every error and warning message that the module can generate (even
-the ones that will "never happen"), with a full explanation of each problem,
-one or more likely causes, and any suggested remedies.
 
-=head1 BUGS AND LIMITATIONS
 
-There are no known bugs in this module.
+# WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+# WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+# WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+# WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+# WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+# WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+# WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+# WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+# WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
 
-Please report problems via http://help.endevver.com/
 
-Patches are welcome.
+# package Test::MT::Base;
+# 
+# use lib $ENV{MT_HOME} ? ("$ENV{MT_HOME}/lib", "$ENV{MT_HOME}/extlib")
+#                       : ("./lib", "./extlib");
+# use lib qw( addons/Log4MT.plugin/lib addons/Log4MT.plugin/extlib );
+# 
+# use base qw( Class::Accessor::Fast Class::Data::Inheritable );
+# 
+# use MT::Util qw( caturl );
+# 
+# __PACKAGE__->mk_accessors(qw(   blog  user  users
+#                                 session_id  session_username  ));
+# 
+# # __PACKAGE__->mk_classdata(  );
+# 
+# BEGIN {
+#     # if MT_HOME is not set, set it
+#     unless ( $ENV{MT_HOME} ) {
+#         require Cwd;
+#         my $cwd    = Cwd::getcwd();
+#         my @pieces = File::Spec->splitdir($cwd);
+#         pop @pieces unless -e 'config.cgi' or -e 'mt-config.cgi';
+#         $ENV{MT_HOME} = File::Spec->catdir(@pieces);
+#     }
+# 
+#     # if MT_CONFIG is not set, set it
+#     if ( $ENV{MT_CONFIG} ) {
+#         if ( !File::Spec->file_name_is_absolute( $ENV{MT_CONFIG} ) ) {
+#             $ENV{MT_CONFIG}
+#               = File::Spec->catfile( $ENV{MT_HOME}, $ENV{MT_CONFIG} );
+#         }
+#     }
+#     else {
+#         use FindBin qw($Bin);
+#         my @dirs = ("$Bin/test.cfg",
+#                     qw( t/sqlite-test.cfg config.cgi mt-config.cgi ));
+#         $ENV{MT_CONFIG}
+#             = first { -e $_ }
+#               map { File::Spec->file_name_is_absolute( $_ )
+#                         ? $_ : File::Spec->catfile( $ENV{MT_HOME}, $_ )
+#                 } @dirs;
+#         print STDERR '$ENV{MT_CONFIG}: '.$ENV{MT_CONFIG}."\n";
+#     }
+#     chdir $ENV{MT_HOME};
+# 
+# } ## end BEGIN
 
-=head1 AUTHOR
 
-Jay Allen, Endevver, LLC http://endevver.com/
+# WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+# WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+# WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+# WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+# WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+# WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+# WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+# WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+# WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
 
-=head1 LICENSE AND COPYRIGHT
 
-Copyright (c) 2012 Endevver, LLC (info@endevver.com).
-All rights reserved.
 
-This module is free software; you can redistribute it and/or modify it under
-the same terms as Perl itself. See L<perlartistic>.  This program is
-distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-PARTICULAR PURPOSE.
+
+
+
+=head1 SUBROUTINES/METHODS
+
+A separate section listing the public components of the module's interface.
+
+These normally consist of either subroutines that may be exported, or methods
+that may be called on objects belonging to the classes that the module
+provides.
+
+Name the section accordingly.
+
+In an object-oriented module, this section should begin with a sentence (of the
+form "An object of this class represents ...") to give the reader a high-level
+context to help them understand the methods that are subsequently described.
+
