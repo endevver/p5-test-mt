@@ -277,7 +277,7 @@ sub init_config_from_db {
     }
 
     $cfg->read_config_db();
-
+    undef $cfg->{_errstr};
     1;
 }
 
