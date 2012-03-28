@@ -364,9 +364,7 @@ sub revert_component_init {
     $debug->(   'Undefining all MT package scalar vars '
               . 'related to component/plugin initialization' );
     no strict 'refs';
-    undef ${"MT::".$_} and $debug->("\t\$MT::".$_) for @global_scalars;
-
-    # %MT::addons Anyone??????Bueller?? Bueller??
+    undef ${"MT::".$_} or $debug->("\t\$MT::$_") for @global_scalars;
 
     {
 
