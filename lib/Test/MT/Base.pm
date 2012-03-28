@@ -25,17 +25,32 @@ use Carp;
 use Test::Most;
 use Try::Tiny;
 use Data::Dumper::Names;
+use Package::Stash;
 
-use base qw( Class::Accessor::Fast MT::ErrorHandler );
+use FindBin qw( $Bin );
+use parent qw( Class::Accessor::Fast MT::ErrorHandler );
+__PACKAGE__->mk_accessors(qw( env app ));
+
 
 BEGIN {
-    my $mt = $ENV{MT_HOME} || '';
-    $mt and $mt =~ s{/*$}{/}i;   # Trailing slash; 
-                                 # i is TextMate syntax coloring fix
-    unshift( @INC, (
-        "${mt}lib",     "${mt}extlib",
-        "${mt}t/lib",   "${mt}t/extlib", 
-    ));
+    my $mt        = $ENV{MT_HOME}
+        or die "MT_HOME environment variable not set! DO IT!";
+    $mt           =~ s{/*$}{/}i;  # Trailing slash; i for TextMate syntax coloring
+    $ENV{MT_HOME} = $mt;
+    my @test_libs = (
+        "${mt}lib",     "${mt}extlib",      # MT core library
+        "${mt}t/lib",   "${mt}t/extlib",    # MT test library
+    );
+
+    $Bin =~ s{/*$}{/}i;
+    if ( $Bin ne $mt ) { # We may be running a plugin's test
+        unshift( @test_libs, (
+            "${Bin}../lib",  "${Bin}../extlib",    # Plugin's core library
+            "${Bin}lib",     "${Bin}extlib"        # Plugin's test library
+        ));
+    }
+    unshift( @INC, ( grep {-d $_ } @test_libs ));
+}
 }
 
 =head1 SUBROUTINES/METHODS
