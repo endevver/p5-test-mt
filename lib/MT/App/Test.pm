@@ -217,7 +217,7 @@ context to help them understand the methods that are subsequently described.
 sub init {
     my $self = shift;
     $self->revert_component_init( reinit => 0 );
-    # $self->add_callback( 'post_init', 1, undef, \&add_plugin_test_libs );
+    $self->add_callback( 'post_init', 1, undef, \&add_plugin_test_libs );
     $self->SUPER::init( @_ );
     $self->override_core_methods();
     MT->set_instance( $self );
