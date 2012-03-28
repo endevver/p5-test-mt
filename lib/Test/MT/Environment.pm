@@ -45,7 +45,11 @@ __PACKAGE__->mk_classdata( %$_ )
             { DBFile        => 'mt.db'                               },
             { ConfigFile    => 'test.cfg'                            },
             { DatabaseClass => join('::', __PACKAGE__, 'Database')   },
-            { DataClass     => join('::', __PACKAGE__, 'Data::YAML') },
+            { DataClass     => do {
+                                    (my $p = __PACKAGE__) =~ s{Environment}{Data::YAML};
+                                    $p;
+                                },
+            }
         );
 
 =head1 SUBROUTINES/METHODS
