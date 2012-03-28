@@ -254,6 +254,13 @@ sub init {
 #     $mt->run_callbacks('post_init', $mt, \%param);
 #     return $mt;
 # }
+sub init_plugins {
+    my $app = shift;
+    my $cfg = $app->config;
+    # print STDERR "INITIALIZING PLUGINS\n";
+    $cfg->PluginPath([ $cfg->PluginPath, "$ENV{MT_HOME}/plugins"  ]);
+    $app->SUPER::init_plugins( @_ );
+}
 
 sub init_config_from_db {
     my $mt = shift;
