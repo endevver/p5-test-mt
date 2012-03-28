@@ -13,6 +13,8 @@ use base qw( Test::MT::Data );
 ( my $key = lc(__PACKAGE__) ) =~ s{:+}{-}g;
 __PACKAGE__->mk_classdata( Key => $key );
 
+use constant DEBUG => 0;
+
 #my $data = {
 #    blogs => { blog_key => { values => { name => 'Blog Name' } } },
 #    roles => {
@@ -111,7 +113,7 @@ sub install {
 
     foreach ( @ordered_types ) {
         my ( $type, $plural ) = each %$_;
-        diag "Starting $type creation...";
+        DEBUG and diag "Starting $type creation...";
         $env_data->{$plural} = $self->create_objects( $type )
             if MT->model( $type ) && $data->{objects}{$plural};
     }
@@ -136,7 +138,7 @@ sub create_objects {
         my $obj = $self->$meth( $member_info );
         if ( $obj->id ) {
             $member_info->{values}{id} = $obj->id;
-            diag "\tSaved $kind ID ".$obj->id;
+            DEBUG and diag "\tSaved $kind ID ".$obj->id;
         }
         $created{$key} = $member_info;
     }
