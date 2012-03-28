@@ -36,10 +36,12 @@ our ( @EXPORT );
 BEGIN {
     @EXPORT = (
         @Test::Most::EXPORT, 
+        'Dumper',
         qw(
               is_object        out_like      err_like      tmpl_out_like
               are_objects      out_unlike    grab_stderr   tmpl_out_unlike
               get_last_output  get_tmpl_out  get_tmpl_error  
+              get_test_builder
         )
     );
 }
@@ -55,23 +57,12 @@ provides.
 
 Name the section accordingly.
 
-In an object-oriented module, this section should begin with a sentence (of the
-form "An object of this class represents ...") to give the reader a high-level
-context to help them understand the methods that are subsequently described.
+=head2 get_test_builder
 
-METHODS:
-    sub import
-    sub _is_object
-    sub are_objects
-    sub err_like
-    sub is_object
-    sub out_like
-    sub out_unlike
-    sub tmpl_out_like
-    sub tmpl_out_unlike
+DOCUMENTATION NEEDED
 
 =cut
-
+sub get_test_builder { $CLASS->builder }
 
 =head2 is_object
 
