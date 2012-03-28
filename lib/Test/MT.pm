@@ -50,15 +50,31 @@ BEGIN {
 }
 
 
-=head1 SUBROUTINES/METHODS
+=head1 METHODS
 
-A separate section listing the public components of the module's interface.
+=head2 import
 
-These normally consist of either subroutines that may be exported, or methods
-that may be called on objects belonging to the classes that the module
-provides.
+DOCUMENTATION NEEDED
 
-Name the section accordingly.
+=cut
+sub import {
+    my $caller = caller;
+    my $stash  = Package::Stash->new( $caller );
+
+    # Default pragmas for all tests
+    strict->import;
+    warnings->import;
+    feature->import(':5.10');   # use feature qw(switch say state)
+
+    # Default module functions for all tests
+    # Done by Exporter above.....Test::Most->import;
+    Class::Load->import(':all');
+    Data::Dumper->import;
+    Carp->import(qw( carp croak confess cluck ));
+
+    # Now goto parent's import method
+    goto &{"Test::Builder::Module::import"};
+}
 
 =head2 get_test_builder
 
