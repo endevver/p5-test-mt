@@ -440,9 +440,9 @@ sub init_upgrade {
     eval {
 
         # line __LINE__ __FILE__
-        MT::Entry->remove;
-        MT::Page->remove;
-        MT::Comment->remove;
+        # MT::Entry->remove;
+        # MT::Page->remove;
+        # MT::Comment->remove;
     };
     require MT::ObjectDriver::Driver::Cache::RAM;
     MT::ObjectDriver::Driver::Cache::RAM->clear_cache();
