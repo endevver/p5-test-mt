@@ -109,6 +109,8 @@ sub install {
         { 'user'  => 'users'   },
         # Entries - Last but not least, the class with the most dependencies
         { 'entry' => 'entries' },
+        # Tags - Which depends on entries
+        { 'tag'   => 'tags' },
     );
 
     foreach ( @ordered_types ) {
@@ -275,7 +277,11 @@ sub create_entry {
     my $entry = $Entry->get_by_key( { title => $v->{title} } );
     $entry->set_values($v);
     $entry->status( $Entry->RELEASE() );
+
+    $entry->set_tags(@{ $v->{tags} }) if $v->{tags};
+
     $entry->save() or croak( $entry->errstr );
+
     return $entry;
 }
 
