@@ -63,11 +63,11 @@ sub id { 'testapp' }
 =cut
 sub init {
     my $self = shift;
-    $self->revert_component_init( reinit => 0 );
-    $self->add_callback( 'post_init', 1, undef, \&add_plugin_test_libs );
+    # $self->revert_component_init( reinit => 0 );
     $self->SUPER::init( @_ );
     $self->override_core_methods();
     MT->set_instance( $self );
+    $self->add_callback( 'post_init', 1, undef, \&add_plugin_test_libs );
     $self;
 }
 
@@ -131,6 +131,8 @@ my %Text_filters;
 
 # For state determination in MT::Object
 our $plugins_installed;
+
+my $types = MT->registry('object_types');
 
 =cut
 sub revert_component_init {
