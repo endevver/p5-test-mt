@@ -25,9 +25,12 @@ use warnings;
 use Test::Most;
 use Package::Stash;
 
-require Carp;
+use Carp qw( croak confess carp );
 require Class::Load;
 require Data::Dumper;
+
+# local $SIG{__WARN__} = \&Carp::cluck;
+# local $SIG{__DIE__} = \&Carp::confess;
 
 our $VERSION = 1.0.0;
 

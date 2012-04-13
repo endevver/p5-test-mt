@@ -21,11 +21,14 @@ May include numerous subsections (i.e., =head2, =head3, etc.).
 =cut
 use strict;
 use warnings;
-use Carp;
+use Carp qw( croak confess carp );
 use Test::Most;
 use Try::Tiny;
 use Data::Dumper::Names;
 use Package::Stash;
+
+# local $SIG{__WARN__} = \&Carp::cluck;
+# local $SIG{__DIE__} = \&Carp::confess;
 
 use FindBin qw( $Bin );
 use parent qw( Class::Accessor::Fast MT::ErrorHandler );

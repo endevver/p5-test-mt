@@ -422,9 +422,6 @@ sub init_newdb {
 sub init_upgrade {
     my $self = shift;
 
-    # use Carp;
-    # Carp::cluck('Upgrading database '); #.Dumper(@MT::Plugins));
-
     # Initialize the MT database
     require MT::Upgrade;
     MT::Upgrade->do_upgrade(

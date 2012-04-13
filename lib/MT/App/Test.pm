@@ -21,8 +21,12 @@ execution of test application.
 
 use strict;
 use warnings;
+
+# Handle cwd = MT_DIR, MT_DIR/t
+use lib 't/lib', 'extlib', 'lib', '../lib', '../extlib';
+
 use Data::Dumper;
-use Carp         qw( longmess );
+use Carp qw( longmess croak confess carp );
 use File::Basename;
 use File::Spec;
 use List::Util   qw( first );
@@ -30,13 +34,19 @@ use Scalar::Util qw( blessed );
 use File::Temp   qw( tempfile );
 use File::Path   qw( make_path remove_tree );
 
-sub DEBUG { 0 }
+# local $SIG{__WARN__} = \&Carp::cluck;
+# local $SIG{__DIE__} = \&Carp::confess;
+
+use MT::Log::Log4perl qw(l4mtdump); use Log::Log4perl qw( :resurrect );
+###l4p our $logger = MT::Log::Log4perl->new();
+
+sub DEBUG { 1 }
 
 use base qw( MT::App );
+use MT;
 
-our $session_id;
-our $session_username = '';
-our $CORE_TIME;
+my ( $CORE_TIME, $session_id );
+my $session_username = '';
 
 BEGIN {
     # Override time and sleep so we can simulate time passing without making
@@ -45,11 +55,6 @@ BEGIN {
       sub { my ($a) = @_; $a ? CORE::time + $_[0] : CORE::time };
     *CORE::GLOBAL::sleep = sub { CORE::sleep };
 }
-
-# Handle cwd = MT_DIR, MT_DIR/t
-use lib 't/lib', 'extlib', 'lib', '../lib', '../extlib';
-use MT;
-
 
 =head2 init
 
@@ -99,19 +104,6 @@ sub init_time {
     no warnings 'redefine';
     *CORE::GLOBAL::time = sub { $CORE_TIME };
     *CORE::GLOBAL::sleep = sub { $CORE_TIME += shift };
-}
-
-=head2 add_plugin_test_libs
-
-=cut
-sub add_plugin_test_libs {
-    require MT::Plugin;
-    my @p = MT::Plugin->select;
-    foreach my $p (@p) {
-        my $t_lib = File::Spec->catdir( $p->path, 't', 'lib' );
-        unshift @INC, $t_lib if ( -d $t_lib );
-    }
-    1;
 }
 
 =head2 debug_handle
@@ -439,6 +431,18 @@ sub run_app {
     }
 
     return $app;
+}
+
+=head2 add_plugin_test_libs
+
+=cut
+sub add_plugin_test_libs {
+    require MT::Plugin;
+    foreach my $p ( MT::Plugin->select ) {
+        my $t_lib = File::Spec->catdir( $p->path, 't', 'lib' );
+        unshift @INC, $t_lib if ( -d $t_lib );
+    }
+    1;
 }
 
 =head2 find_addon_libs
