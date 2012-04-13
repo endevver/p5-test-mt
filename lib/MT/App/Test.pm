@@ -56,6 +56,8 @@ BEGIN {
     *CORE::GLOBAL::sleep = sub { CORE::sleep };
 }
 
+sub id { 'testapp' }
+
 =head2 init
 
 =cut
