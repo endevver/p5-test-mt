@@ -185,7 +185,7 @@ sub revert_component_init {
     # loaded previously which is necessary for making MT process the plugin
     # as it does in its own init methods.
     foreach my $pdata ( values %$p_hash ) {
-        my $path = first { defined($_) and m{\.pl}i }
+        my $path = first { defined($_) and /\.pl/i }
                     $pdata->{object}{ "full_path", "path" };
         next unless $path;
         delete $INC{$path} and $debug->("\t$path");
