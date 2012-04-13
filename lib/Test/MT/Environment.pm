@@ -307,7 +307,18 @@ sub ref_dir {
     return $self->error( $msg );
 }
 
-=head2 init_newdb
+
+=head2 app_class
+
+=cut
+sub app_class {
+    my $self      = shift;
+    my $app_class = $ENV{MT_APP} ||= 'MT::App::Test';
+    eval "require $app_class; 1;" or die "Can't load $app_class: $@";
+    $app_class;
+}
+
+=head2 init_db
 
 DOCUMENTATION NEEDED
 
