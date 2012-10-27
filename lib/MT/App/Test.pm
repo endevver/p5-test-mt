@@ -37,7 +37,10 @@ use File::Path   qw( make_path remove_tree );
 # local $SIG{__WARN__} = \&Carp::cluck;
 # local $SIG{__DIE__} = \&Carp::confess;
 
-use MT::Log::Log4perl qw(l4mtdump); use Log::Log4perl qw( :resurrect );
+use Log::Log4perl::Resurrector;
+# The above works for LATER loaded modules, but it's too late for this one
+use Log::Log4perl qw( :resurrect );     
+use MT::Log::Log4perl qw(l4mtdump); 
 ###l4p our $logger = MT::Log::Log4perl->new();
 
 sub DEBUG { 1 }

@@ -63,24 +63,25 @@ sub construct_default {
     require Test::MT::Environment;
     my $env = Test::MT::Environment->new()
         or die "Could not create \$test->env";
+    $test->env( $env );
 
-    my $data = $env->init()
-                   ->init_db()
-                   ->init_data( file => './data/bootstrap_env.yaml' )
-                   or die "Could not create \$data";
+    my $app = $test->init_app()
+        or die "No MT object " . MT->errstr;
+    $test->app( $app );
+
+    $env->init()    or confess "Init error: "   . $env->errstr;
+    $env->init_db() or confess "Init DB error: ". $env->errstr;
+
+    my $data = $env->init_data( file => './data/bootstrap_env.yaml' )
+                   or die "Error creating test data: ".$env->errstr;
 
     my $env_data = $data->install()
         or die "Could not create \$env_data";
-
-    my $app = $test->init_app()
-        or die "Could not create \$test->app";
 
     $env->init_upgrade()
         or die "Could not upgrade DB";
 
     die 'Cannot app' unless $test->can('app');
-    $test->env( $env );
-    $test->app( $app );
     $test;
 }
 
@@ -216,14 +217,20 @@ our $session_username = '';
 
 =cut
 sub init_app {
-    my $pkg   = shift;
-    my ($cfg) = @_;
-    $cfg    ||= $ENV{MT_CONFIG};
+    my $pkg = shift;
+    my $env = $pkg->env;
+    
+    my $app_class = $env->app_class;
+    my $app       = $app_class->construct(
+        Config => $env->config_file,
+        App    => $app_class
+    )
+        or die "No MT object " . MT->errstr;
 
-    my $app_class = $ENV{MT_APP} ||= 'MT::App::Test';
-    eval "require $app_class; 1;" or die "Can't load $app_class: $@";
-    my $app = $app_class->construct( Config => $cfg, App => $app_class );
+    MT->set_instance( $app );
+
     return $app;
+
 
     # my $app = $app_class->new( Config => $cfg, App => 'MT::App::Test' );
     # 

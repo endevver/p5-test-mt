@@ -40,6 +40,8 @@ use base qw( Pure::Test::MT::Environment
              Class::Data::Inheritable
              MT::ErrorHandler );
 
+my $logger;
+
 __PACKAGE__->mk_classdata( %$_ )
     for (
             { DBFile        => 'mt.db'                               },
@@ -75,14 +77,22 @@ locate our own modules.
 sub init {
     my $self = shift;
     $self->init_paths() or return;
+    # print STDERR "# ENV $_: $ENV{$_}\n"
+    #     foreach qw( MT_HOME
+    #                 MT_TEST_DIR
+    #                 MT_CONFIG
+    #                 MT_DS_DIR
+    #                 MT_REF_DIR );
     $self;
 }
 
-sub progress { }
+sub progress {
+    # Carp::carp( join('; ', @_))
+}
 
 sub error {
     my $self = shift;
-    cluck join( '. ', $@ );
+    Carp::cluck( join( '. ', $@ ));
     $self->SUPER::error(@_);
 }
 
@@ -127,7 +137,7 @@ sub init_paths {
               and $ENV{MT_CONFIG}   = $self->config_file()
               and $ENV{MT_DS_DIR}   = $self->ds_dir()
               and $ENV{MT_REF_DIR}  = $self->ref_dir();
-              
+
     # foreach my $path (qw( ds_dir ref_dir )) {
     #     $self->{$path}
     #         = File::Spec->rel2abs( $self->$path, $self->config_dir )
@@ -159,15 +169,14 @@ sub mt_dir {
                     File::Spec->catdir( @pieces );
                  };
 
-    $dir = File::Spec->rel2abs( $dir, getcwd() );
-
-    $dir
+    $dir = File::Spec->rel2abs( $dir, getcwd() )
         or return $self->error('Could not determine MT_HOME directory');
 
     -d $dir
         or return $self->error('Bad MT_HOME directory: '. $ENV{MT_HOME} );
 
-    chdir $dir or die "Can't cd to MT_HOME directory, $dir: $!\n";
+    chdir $dir
+        or die "Can't cd to MT_HOME directory, $dir: $!\n";
 
     return $self->mt_dir( $ENV{MT_HOME} = $dir );
 }
@@ -334,16 +343,22 @@ sub init_db {
         or die sprintf( "DS directory not found: %s", $self->ds_dir );
 
     my $db_file = $self->db_file;
-    if ( -f $db_file ) {
-        unlink( $db_file ) or die "Error removing DBFile $db_file: ".$!;
+
+    if ( -e -w $db_file ) {
+        # warn "Removing DB file $db_file";
+        unlink( $db_file )
+            or die "Error removing DBFile $db_file: ".$!;
     }
 
     my $key    = $data_class->Key;
     my $ref_db = File::Spec->catfile( $self->ref_dir, $key, $self->DBFile );
+    # warn "ref_db: $ref_db\n";
 
     my $cfg;
-    if ( -f $ref_db ) {
-        cp( $ref_db, $db_file ) or die "Copy failed from $ref_db to $db_file: $!";
+    if ( -r -s $ref_db ) {  # Is non-zero sized file
+        # warn "Using ref DB $ref_db; copying to $db_file";
+        cp( $ref_db, $db_file )
+            or die "Copy failed from $ref_db to $db_file: $!";
 
         my $mt = MT->instance( Config => $self->config_file )
             or die "No MT object " . MT->errstr;
@@ -357,6 +372,7 @@ sub init_db {
                 eq File::Spec->rel2abs( $cfg->Database, $self->mt_dir );
     }
     else {
+        # warn "Constructing ref DB $ref_db from scratch";
         $self->init_newdb(@_) && $self->init_upgrade(@_);
         make_path( dirname( $ref_db ), { error => \(my $err) });
 
@@ -373,6 +389,8 @@ sub init_db {
             }
             die $msg;
         }
+        # warn "Copying ref DB $ref_db to $db_file";
+        # warn `ls -al $db_file $ref_db`;
         cp( $db_file, $ref_db ) or die "Copy failed from $db_file to $ref_db: $!";
     }
     $self;
@@ -414,6 +432,7 @@ sub init_newdb {
 
     # Clear existing database tables
     my $driver = MT::Object->driver();
+    # warn 'Driver: '.Dumper($driver);
     my $ddl    = $driver->dbd->ddl_class;
     foreach my $class ( @classes ) {
         $class = $class->[0] if ref $class eq 'ARRAY';
