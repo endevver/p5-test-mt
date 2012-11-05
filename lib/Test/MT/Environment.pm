@@ -41,7 +41,13 @@ use base qw( Pure::Test::MT::Environment
              Class::Data::Inheritable
              MT::ErrorHandler );
 
-my $logger;
+sub DEBUG() { 0 };
+
+use Log::Log4perl::Resurrector;
+# The above works for LATER loaded modules, but it's too late for this one
+use Log::Log4perl qw( :resurrect );     
+use MT::Log::Log4perl qw(l4mtdump); 
+###l4p our $logger = MT::Log::Log4perl->new();
 
 __PACKAGE__->mk_classdata( %$_ )
     for (
@@ -336,7 +342,12 @@ DOCUMENTATION NEEDED
 sub init_db {
     my $self       = shift;
     my $data_class = shift || $self->DataClass();
-
+    ###l4p $logger ||= MT::Log::Log4perl->new(); $logger->trace();
+    # local $Carp::Verbose = 8;
+    # print STDERR 'In init_db '.Carp::longmess();
+    ###l4p $logger->debug('In init_db called from '.Carp::longmess());
+    
+    ###l4p $logger->info("Initializing data class $data_class");
     eval "require $data_class;"
         or die "Could not load $data_class: $@";
 
@@ -344,22 +355,22 @@ sub init_db {
         or die sprintf( "DS directory not found: %s", $self->ds_dir );
 
     my $db_file = $self->db_file;
-
+    ###l4p $logger->debug("db_file path: $db_file");
     if ( -e -w $db_file ) {
-        # warn "Removing DB file $db_file";
-        unlink( $db_file )
-            or die "Error removing DBFile $db_file: ".$!;
+        ###l4p $logger->warn("Removing DB file $db_file");
+        unlink( $db_file );
     }
 
     my $key    = $data_class->Key;
     my $ref_db = File::Spec->catfile( $self->ref_dir, $key, $self->DBFile );
-    # warn "ref_db: $ref_db\n";
+    ###l4p $logger->debug("ref_db path: $ref_db");
+    ###l4p $logger->warn(`ls -al $db_file $ref_db`);
 
     my $cfg;
     if ( -r -s $ref_db ) {  # Is non-zero sized file
-        # warn "Using ref DB $ref_db; copying to $db_file";
-        cp( $ref_db, $db_file )
-            or die "Copy failed from $ref_db to $db_file: $!";
+
+        ###l4p $logger->warn("Using ref DB $ref_db; copying to $db_file");
+        cp( $ref_db, $db_file );
 
         my $mt = MT->instance( Config => $self->config_file )
             or die "No MT object " . MT->errstr;
@@ -373,8 +384,10 @@ sub init_db {
                 eq File::Spec->rel2abs( $cfg->Database, $self->mt_dir );
     }
     else {
-        # warn "Constructing ref DB $ref_db from scratch";
-        $self->init_newdb(@_) && $self->init_upgrade(@_);
+        ###l4p $logger->warn("Constructing ref DB from scratch");
+        $self->init_newdb(@_);
+        ###l4p $logger->warn("Initializing upgrade");
+        $self->init_upgrade(@_);
         make_path( dirname( $ref_db ), { error => \(my $err) });
 
         if ( ref $err and @$err ) {
@@ -390,9 +403,16 @@ sub init_db {
             }
             die $msg;
         }
-        # warn "Copying ref DB $ref_db to $db_file";
-        # warn `ls -al $db_file $ref_db`;
-        cp( $db_file, $ref_db ) or die "Copy failed from $db_file to $ref_db: $!";
+
+        if ( -r -s $db_file ) {
+            ###l4p $logger->warn(`ls -al $db_file $ref_db`);
+            ###l4p $logger->warn("Copying ref DB $db_file to $ref_db");
+            cp( $db_file, $ref_db ) ;
+            ###l4p $logger->warn(`ls -al $db_file $ref_db`);
+        }
+        else {
+            ###l4p $logger->warn("NOT Copying zero-sized ref DB $db_file to $ref_db");
+        }
     }
     $self;
 }
@@ -411,6 +431,8 @@ sub init_newdb {
       or die "No MT object " . MT->errstr;
 
     my $types    = MT->registry('object_types');
+    ###l4p $logger->debug('object_types $types: ', l4mtdump($types));
+
     $types->{$_} = MT->model($_)
         for grep { MT->model($_) }
              map { $_ . ':meta' }
@@ -418,10 +440,12 @@ sub init_newdb {
                 sort keys %$types;
 
     my @classes = map { $types->{$_} } grep { $_ !~ /\./ } sort keys %$types;
+
     foreach my $class (@classes) {
         next if ref($class) eq 'ARRAY';   # TODO for now - it won't hurt
                                           # when we do driver-tests.
         if ( ! defined *{ $class . '::__properties' } ) {
+            ###l4p $logger->info("REQUIRING $class");
             eval '# line ' 
               . __LINE__ . ' ' 
               . __FILE__ . "\n"
@@ -433,14 +457,19 @@ sub init_newdb {
 
     # Clear existing database tables
     my $driver = MT::Object->driver();
-    # warn 'Driver: '.Dumper($driver);
     my $ddl    = $driver->dbd->ddl_class;
+    ###l4p $logger->debug('Driver: ', l4mtdump($driver));
+    ###l4p $logger->debug('DDL class: ', l4mtdump($ddl));
+
     foreach my $class ( @classes ) {
         $class = $class->[0] if ref $class eq 'ARRAY';
-
         if ( $ddl->table_exists($class) ) {
+            ###l4p $logger->info("Dropping $class table and sequence");
             $driver->sql( $ddl->drop_table_sql($class) );
             $ddl->drop_sequence($class),;
+        }
+        else {
+            ###l4p $logger->info("No table to drop for $class");
         }
     }
 
