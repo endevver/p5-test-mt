@@ -13,7 +13,7 @@ use base qw( Test::MT::Data );
 ( my $key = lc(__PACKAGE__) ) =~ s{:+}{-}g;
 __PACKAGE__->mk_classdata( Key => $key );
 
-use constant DEBUG => 1;
+sub DEBUG { 0 }
 
 #my $data = {
 #    blogs => { blog_key => { values => { name => 'Blog Name' } } },

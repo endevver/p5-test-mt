@@ -78,6 +78,9 @@ sub construct_default {
     my $env_data = $data->install()
         or die "Could not create \$env_data";
 
+    # my ($d, $r) = ( $env->db_file, $env->ref_dir.'/test-mt-data-yaml/mt.db' );
+    # warn(`ls -al $d $r`);
+
     $env->init_upgrade()
         or die "Could not upgrade DB";
 

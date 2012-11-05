@@ -43,7 +43,7 @@ use Log::Log4perl qw( :resurrect );
 use MT::Log::Log4perl qw(l4mtdump); 
 ###l4p our $logger = MT::Log::Log4perl->new();
 
-sub DEBUG { 1 }
+sub DEBUG { 0 }
 
 use base qw( MT::App );
 use MT;
@@ -77,7 +77,7 @@ sub init {
 sub init_plugins {
     my $app = shift;
     my $cfg = $app->config;
-    # print STDERR "INITIALIZING PLUGINS\n";
+    DEBUG and print STDERR "INITIALIZING PLUGINS\n";
     $cfg->PluginPath([ $cfg->PluginPath, "$ENV{MT_HOME}/plugins"  ]);
     $app->SUPER::init_plugins( @_ );
 }
@@ -264,6 +264,7 @@ sub progress { }
 =cut
 sub reset_table_for {
     my $self = shift;
+    my $debug = $self->debug_handle();
     for my $class (@_) {
         my $driver    = $class->dbi_driver;
         my $dbh       = $driver->rw_handle;
@@ -272,15 +273,25 @@ sub reset_table_for {
         $dbh->{pg_server_prepare} = 0
             if $ddl_class =~ m/Pg/;
 
-        $dbh->do( $ddl_class->drop_table_sql($class) )
-          or die $dbh->errstr
-          if $driver->table_exists($class);
+        if ($driver->table_exists($class)) {
+            $debug->( "Dropping $class table" );
+            $dbh->do( $ddl_class->drop_table_sql($class) )
+              or die $dbh->errstr;
+        }
+
+        $debug->( "Re-creating $class table" );
         $dbh->do( $ddl_class->create_table_sql($class) ) or die $dbh->errstr;
-        $dbh->do($_)
-          or die $dbh->errstr
-          for $ddl_class->index_table_sql($class);
-        $ddl_class->drop_sequence($class),
-          $ddl_class->create_sequence($class);    # may do nothing
+
+        for ($ddl_class->index_table_sql($class)) {
+            $debug->( "Running SQL on $class table: $_" );
+            $dbh->do($_) or die $dbh->errstr
+        }
+
+        $debug->( "Dropping sequence on $class table" );
+        $ddl_class->drop_sequence($class);
+
+        $debug->( "Creating sequence on $class table" );
+        $ddl_class->create_sequence($class);    # may do nothing
     }
 }
 
