@@ -35,6 +35,7 @@ use File::Basename  qw( dirname basename );
 use File::Path      qw( make_path remove_tree );
 use Cwd             qw( getcwd );
 use File::Copy      qw( cp );
+use autodie         qw(:all);
 
 use base qw( Pure::Test::MT::Environment
              Class::Data::Inheritable
