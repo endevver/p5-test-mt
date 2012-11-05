@@ -24,15 +24,14 @@ use strict;
 use warnings;
 use Test::Most;
 use Package::Stash;
-
 use Carp qw( croak confess carp );
 require Class::Load;
 require Data::Dumper;
 
+use version 0.77; our $VERSION = qv("v1.1.0");               # shorthand
+
 # local $SIG{__WARN__} = \&Carp::cluck;
 # local $SIG{__DIE__} = \&Carp::confess;
-
-our $VERSION = 1.0.0;
 
 my $CLASS = __PACKAGE__;
 use base qw( Test::Builder::Module );
