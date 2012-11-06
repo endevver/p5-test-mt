@@ -29,7 +29,7 @@ require Class::Load;
 require Data::Dumper;
 use Test::MT::Util qw( debug_handle );
 
-use version 0.77; our $VERSION = qv("v1.1.0");               # shorthand
+use version 0.77; our $VERSION = qv('v1.1.1');               # shorthand
 
 # local $SIG{__WARN__} = \&Carp::cluck;
 # local $SIG{__DIE__} = \&Carp::confess;
