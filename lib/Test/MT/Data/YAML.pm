@@ -7,6 +7,7 @@ use Data::Dumper;
 use YAML::Tiny;
 use Try::Tiny;
 use Test::More;
+use Test::MT::Util qw( debug_handle );
 
 use base qw( Test::MT::Data );
 

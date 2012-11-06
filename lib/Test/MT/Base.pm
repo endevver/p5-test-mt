@@ -26,6 +26,7 @@ use Test::Most;
 use Try::Tiny;
 use Data::Dumper::Names;
 use Package::Stash;
+use Test::MT::Util qw( debug_handle );
 
 # local $SIG{__WARN__} = \&Carp::cluck;
 # local $SIG{__DIE__} = \&Carp::confess;

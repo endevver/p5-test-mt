@@ -27,6 +27,7 @@ use Package::Stash;
 use Carp qw( croak confess carp );
 require Class::Load;
 require Data::Dumper;
+use Test::MT::Util qw( debug_handle );
 
 use version 0.77; our $VERSION = qv("v1.1.0");               # shorthand
 
@@ -51,6 +52,7 @@ BEGIN {
     );
 }
 
+sub DEBUG { 0 }
 
 =head1 METHODS
 

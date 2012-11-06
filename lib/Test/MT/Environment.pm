@@ -36,12 +36,13 @@ use File::Path      qw( make_path remove_tree );
 use Cwd             qw( getcwd );
 use File::Copy      qw( cp );
 use autodie         qw(:all);
+use Test::MT::Util  qw( debug_handle );
 
 use base qw( Pure::Test::MT::Environment
              Class::Data::Inheritable
              MT::ErrorHandler );
 
-sub DEBUG() { 0 };
+sub DEBUG() { 0 }
 
 use Log::Log4perl::Resurrector;
 # The above works for LATER loaded modules, but it's too late for this one
@@ -357,19 +358,19 @@ sub init_db {
     my $db_file = $self->db_file;
     ###l4p $logger->debug("db_file path: $db_file");
     if ( -e -w $db_file ) {
-        ###l4p $logger->warn("Removing DB file $db_file");
+        ###l4p $logger->info("Removing DB file $db_file");
         unlink( $db_file );
     }
 
     my $key    = $data_class->Key;
     my $ref_db = File::Spec->catfile( $self->ref_dir, $key, $self->DBFile );
     ###l4p $logger->debug("ref_db path: $ref_db");
-    ###l4p $logger->warn(`ls -al $db_file $ref_db`);
+    ###l4p $logger->debug(`ls -al $db_file $ref_db`);
 
     my $cfg;
     if ( -r -s $ref_db ) {  # Is non-zero sized file
 
-        ###l4p $logger->warn("Using ref DB $ref_db; copying to $db_file");
+        ###l4p $logger->info("Using ref DB $ref_db; copying to $db_file");
         cp( $ref_db, $db_file );
 
         my $mt = MT->instance( Config => $self->config_file )
@@ -384,9 +385,9 @@ sub init_db {
                 eq File::Spec->rel2abs( $cfg->Database, $self->mt_dir );
     }
     else {
-        ###l4p $logger->warn("Constructing ref DB from scratch");
+        ###l4p $logger->info("Constructing ref DB from scratch");
         $self->init_newdb(@_);
-        ###l4p $logger->warn("Initializing upgrade");
+        ###l4p $logger->info("Initializing upgrade");
         $self->init_upgrade(@_);
         make_path( dirname( $ref_db ), { error => \(my $err) });
 
@@ -405,13 +406,13 @@ sub init_db {
         }
 
         if ( -r -s $db_file ) {
-            ###l4p $logger->warn(`ls -al $db_file $ref_db`);
-            ###l4p $logger->warn("Copying ref DB $db_file to $ref_db");
+            ###l4p $logger->debug(`ls -al $db_file $ref_db`);
+            ###l4p $logger->info("Copying ref DB $db_file to $ref_db");
             cp( $db_file, $ref_db ) ;
-            ###l4p $logger->warn(`ls -al $db_file $ref_db`);
+            ###l4p $logger->debug(`ls -al $db_file $ref_db`);
         }
         else {
-            ###l4p $logger->warn("NOT Copying zero-sized ref DB $db_file to $ref_db");
+            ###l4p $logger->info("NOT Copying zero-sized ref DB $db_file to $ref_db");
         }
     }
     $self;

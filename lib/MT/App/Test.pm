@@ -43,6 +43,8 @@ use Log::Log4perl qw( :resurrect );
 use MT::Log::Log4perl qw(l4mtdump); 
 ###l4p our $logger = MT::Log::Log4perl->new();
 
+use Test::MT::Util qw( debug_handle );
+
 sub DEBUG { 0 }
 
 use base qw( MT::App );
@@ -110,18 +112,6 @@ sub init_time {
     *CORE::GLOBAL::time = sub { $CORE_TIME };
     *CORE::GLOBAL::sleep = sub { $CORE_TIME += shift };
 }
-
-=head2 debug_handle
-
-=cut
-sub debug_handle {
-    my $self = shift;
-    my ( $hdlr ) = @_;
-    return ! $self->DEBUG ? sub {}
-         : $hdlr          ? sub { $hdlr->(@_) }
-                          : sub { print STDERR join("\n",@_)."\n" };
-}
-
 
 =head2 revert_component_init
 
