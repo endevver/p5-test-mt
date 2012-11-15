@@ -406,10 +406,10 @@ sub init_db {
         }
 
         if ( -r -s $db_file ) {
-            ###l4p $logger->debug(`ls -al $db_file $ref_db`);
+            ###l4p $logger->debug(`ls -al $db_file $ref_db 2>/dev/null`);
             ###l4p $logger->info("Copying ref DB $db_file to $ref_db");
             cp( $db_file, $ref_db ) ;
-            ###l4p $logger->debug(`ls -al $db_file $ref_db`);
+            ###l4p $logger->debug(`ls -al $db_file $ref_db  2>/dev/null`);
         }
         else {
             ###l4p $logger->info("NOT Copying zero-sized ref DB $db_file to $ref_db");
@@ -496,7 +496,6 @@ sub init_upgrade {
     MT::Upgrade->do_upgrade( App => __PACKAGE__, User => {}, Blog => {} );
 
     eval {
-
         # line __LINE__ __FILE__
         # MT::Entry->remove;
         # MT::Page->remove;
