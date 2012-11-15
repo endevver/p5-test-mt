@@ -20,23 +20,25 @@ plugins.
 
 =cut
 
+use 5.010_001;      # Minimum perl version is 5.10.1
 use strict;
 use warnings;
 use Test::Most;
-use Package::Stash;
-use Carp qw( croak confess carp );
-require Class::Load;
-require Data::Dumper;
-use Test::MT::Util qw( debug_handle );
+use Test::Builder::Module;
+use base            qw( Test::Builder::Module );
+use Carp            qw( croak confess carp );
+use Test::MT::Util  qw( debug_handle );
+use Class::Load     ();
+use Data::Dumper    ();
+# use Package::Stash;
 
 use version 0.77; our $VERSION = qv('v1.1.1');               # shorthand
 
 # local $SIG{__WARN__} = \&Carp::cluck;
 # local $SIG{__DIE__} = \&Carp::confess;
 
-my $CLASS = __PACKAGE__;
-use base qw( Test::Builder::Module );
 
+my $CLASS = __PACKAGE__;
 our ( @EXPORT );
 
 BEGIN {
@@ -46,7 +48,7 @@ BEGIN {
         qw(
               is_object        out_like      err_like      tmpl_out_like
               are_objects      out_unlike    grab_stderr   tmpl_out_unlike
-              get_last_output  get_tmpl_out  get_tmpl_error  
+              get_last_output  get_tmpl_out  get_tmpl_error
               get_test_builder
         )
     );
@@ -62,8 +64,8 @@ DOCUMENTATION NEEDED
 
 =cut
 sub import {
-    my $caller = caller;
-    my $stash  = Package::Stash->new( $caller );
+    # my $caller = caller;
+    # my $stash  = Package::Stash->new( $caller );
 
     # Default pragmas for all tests
     strict->import;
@@ -326,10 +328,6 @@ DOCUMENTATION NEEDED
 
 =cut
 sub get_tmpl_error { return "$tmpl_err" }
-
-
-
-
 
 1;
 
