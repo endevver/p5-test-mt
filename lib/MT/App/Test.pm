@@ -39,8 +39,8 @@ use File::Path   qw( make_path remove_tree );
 
 use Log::Log4perl::Resurrector;
 # The above works for LATER loaded modules, but it's too late for this one
-use Log::Log4perl qw( :resurrect );     
-use MT::Log::Log4perl qw(l4mtdump); 
+use Log::Log4perl qw( :resurrect );
+use MT::Log::Log4perl qw(l4mtdump);
 ###l4p our $logger = MT::Log::Log4perl->new();
 
 use Test::MT::Util qw( debug_handle );

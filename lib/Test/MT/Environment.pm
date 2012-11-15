@@ -46,8 +46,8 @@ sub DEBUG() { 0 }
 
 use Log::Log4perl::Resurrector;
 # The above works for LATER loaded modules, but it's too late for this one
-use Log::Log4perl qw( :resurrect );     
-use MT::Log::Log4perl qw(l4mtdump); 
+use Log::Log4perl qw( :resurrect );
+use MT::Log::Log4perl qw(l4mtdump);
 ###l4p our $logger = MT::Log::Log4perl->new();
 
 __PACKAGE__->mk_classdata( %$_ )
@@ -145,14 +145,6 @@ sub init_paths {
               and $ENV{MT_CONFIG}   = $self->config_file()
               and $ENV{MT_DS_DIR}   = $self->ds_dir()
               and $ENV{MT_REF_DIR}  = $self->ref_dir();
-
-    # foreach my $path (qw( ds_dir ref_dir )) {
-    #     $self->{$path}
-    #         = File::Spec->rel2abs( $self->$path, $self->config_dir )
-    #             or return $self->error("Could not set path for $path: "
-    #                                     .$self->errstr );
-    # }
-
     1;
 }
 
@@ -235,12 +227,12 @@ sub config_file {
     my $self = shift;
     return $self->SUPER::config_file() if $self->SUPER::config_file;
     return $self->SUPER::config_file(@_) if @_;
-    
+
     my $file = $ENV{MT_CONFIG}
            || File::Spec->catfile( $self->test_dir, $self->ConfigFile );
 
     $file = File::Spec->rel2abs( $file, $self->mt_dir );
-    
+
     $self->config_file( $ENV{MT_CONFIG} = $file );
 }
 
@@ -259,7 +251,7 @@ sub ds_dir {
     return $self->SUPER::ds_dir(@_) if @_;
 
     my $dir = File::Spec->catdir( $self->config_dir, 'db' );
-    
+
     -d $dir or make_path( $dir, {error => \my $err} );
 
     return $self->ds_dir( $ENV{MT_DS_DIR} = $dir )
@@ -421,8 +413,6 @@ sub init_db {
     $self;
 }
 
-
-
 =head2 init_newdb
 
 =cut
@@ -450,8 +440,8 @@ sub init_newdb {
                                           # when we do driver-tests.
         if ( ! defined *{ $class . '::__properties' } ) {
             ###l4p $logger->info("REQUIRING $class");
-            eval '# line ' 
-              . __LINE__ . ' ' 
+            eval '# line '
+              . __LINE__ . ' '
               . __FILE__ . "\n"
               . 'require '
               . $class
