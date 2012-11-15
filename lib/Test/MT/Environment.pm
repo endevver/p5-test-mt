@@ -357,10 +357,13 @@ sub init_db {
 
     my $db_file = $self->db_file;
     ###l4p $logger->debug("db_file path: $db_file");
-    if ( -e -w $db_file ) {
-        ###l4p $logger->info("Removing DB file $db_file");
-        unlink( $db_file );
-    }
+
+    ### TEMP COMMENTED
+    # if ( -e -w $db_file ) {
+    #     ###l4p $logger->info("Removing DB file $db_file");
+    #     cluck( "UNLINKING DB FILE" );
+    #     unlink( $db_file );
+    # }
 
     my $key    = $data_class->Key;
     my $ref_db = File::Spec->catfile( $self->ref_dir, $key, $self->DBFile );

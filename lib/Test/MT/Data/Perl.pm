@@ -33,6 +33,7 @@ sub init {
 
     # nix the old site just in case
     my $site_dir = File::Spec->catdir( $self->TestDir, 'site' );
+    warn "REMOVING SITE DIRECTORY $site_dir";
     `rm -fR $site_dir` if ( -d $site_dir );
 
     if ( $self->is_mt_v5 ) {
