@@ -25,19 +25,20 @@ May include numerous subsections (i.e., =head2, =head3, etc.).
 use strict;
 use warnings;
 use autodie;
-use Carp                qw( croak confess carp );
-use Test::Builder::Module ();
+use Test::Builder::Module;
+use base qw( Test::Builder::Module );
+use FindBin                 qw($Bin);
+use Try::Tiny               ();
+use Carp                    ();
+use Scalar::Util            ();
+use Test::MT::Util          ();
 use Test::Builder;
 use Test::Most;
+use Test::More;
 use Test::MT;
-use Try::Tiny           ();
-use Test::MT::Util      ();
-use FindBin             qw( $Bin );
-use parent qw( Test::Builder::Module );
-
+use Test::MT::ConfigMgr;
+use Package::Stash;
 our ( $CLASS, @EXPORT );
-our $session_id;
-our $session_username = '';
 
 BEGIN {
     $CLASS  = __PACKAGE__;
@@ -52,10 +53,9 @@ BEGIN {
 
 sub new {
     my $proto = shift;
-    $proto = ref $proto || $proto;
-    my $self = bless {}, $proto;
+    $proto    = ref $proto || $proto;
+    my $self  = bless { @_ }, $proto;
 }
-
 
 
 sub import {
@@ -75,9 +75,11 @@ sub import {
     strict->import;
     warnings->import;
     feature->import(':5.10');   # use feature qw(switch say state)
-    Class::Load->import(':all');
+
     Carp->import(qw( carp croak confess cluck ));
     Test::Most->import;
+    Test::More->import;
+    Scalar::Util->import(qw( blessed looks_like_number ));
 
     goto &Test::Builder::Module::import;
 }
@@ -86,15 +88,17 @@ sub construct_default {
     my $pkg = shift;
 
     my $test = $pkg->new();
+
     require Test::MT::Environment;
     my $env = Test::MT::Environment->new()
         or die "Could not create \$test->env";
+
     $test->env( $env );
 
-    $env->db_file or die "No Database file value for config to use";
+    # $env->db_file or die "No Database file value for config to use";
 
-    $env->init()    or confess "Init error: "   . $env->errstr;
-    $env->init_db() or confess "Init DB error: ". $env->errstr;
+    $env->init()    or Carp::confess "Init error: "   . $env->errstr;
+    # $env->init_db() or Carp::confess "Init DB error: ". $env->errstr;
 
     my $app = $test->init_app( TestDatabase =>  $env->db_file )
         or die "No MT object " . MT->errstr;

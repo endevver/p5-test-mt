@@ -30,7 +30,7 @@ use Carp qw( longmess croak confess carp );
 use File::Basename;
 use File::Spec;
 use List::Util   qw( first );
-use Scalar::Util qw( blessed );
+use Scalar::Util qw( blessed looks_like_number );
 use File::Temp   qw( tempfile );
 use File::Path   qw( make_path remove_tree );
 
@@ -76,6 +76,68 @@ sub init {
     $self->add_callback( 'post_init', 1, undef, \&add_plugin_test_libs );
     $self;
 }
+
+=pod
+    MT::init
+
+    sub init {
+        my $mt    = shift;
+        my %param = @_;
+
+        $mt->bootstrap() unless $MT_DIR;
+        $mt->{mt_dir}     = $MT_DIR;
+        $mt->{config_dir} = $CFG_DIR;
+        $mt->{app_dir}    = $APP_DIR;
+
+        $mt->init_callbacks();
+
+        ## Initialize the language to the default in case any errors occur in
+        ## the rest of the initialization process.
+        $mt->init_config( \%param ) or return;
+        require MT::Plugin;
+        $mt->init_addons(@_)        or return;
+        $mt->init_config_from_db( \%param ) or return;
+        $mt->init_debug_mode;
+        $mt->init_plugins(@_)       or return;
+        $plugins_installed = 1;
+        $mt->init_schema();
+        $mt->init_permissions();
+
+        # Load MT::Log so constants are available
+        require MT::Log;
+
+        $mt->run_callbacks('post_init', $mt, \%param);
+        return $mt;
+    }
+
+    MT::App::init
+    
+    sub init {
+        my $app   = shift;
+        my %param = @_;
+        $app->{apache} = $param{ApacheObject} if exists $param{ApacheObject};
+
+        # start tracing even prior to 'init'
+        local $SIG{__WARN__} = sub { $app->trace( $_[0] ) };
+        $app->SUPER::init(%param) or return;
+        $app->{vtbl}                 = {};
+        $app->{is_admin}             = 0;
+        $app->{template_dir}         = 'cms';          #$app->id;
+        $app->{user_class}           = 'MT::Author';
+        $app->{plugin_template_path} = 'tmpl';
+        $app->run_callbacks( 'init_app', $app, @_ );
+
+        if ( $MT::DebugMode & 128 ) {
+            MT->add_callback( 'pre_run',  1, $app, sub { $app->pre_run_debug } );
+            MT->add_callback( 'takedown', 1, $app, sub { $app->post_run_debug } );
+        }
+        $app->{vtbl} = $app->registry("methods");
+        $app->init_request(@_);
+        return $app;
+    }
+
+
+=cut
 
 {
     my $Database;

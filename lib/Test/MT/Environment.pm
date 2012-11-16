@@ -30,18 +30,63 @@ Test::MT::Environment - Class representing the environment for all MT tests
 
 =head1 DESCRIPTION
 
-Class representing the environment under which all all MT tests are executing
+This class is instantiated by Test::MT::Base and available via the env()
+method of its object instance
+
+    use parent 'Test::MT::Base';
+    my $test = __PACKAGE__->construct_default();
+    print blessed $test->env;    # outputs Test::MT::Environment!
+
+=head1 METHODS
+
+=over 4
+
+
+=item * mt_dir
+
+MT_HOME         MT directory
+
+=item * test_dir
+
+MT_TEST_DIR     Base directory for the tests
+
+=item * config_dir
+
+MT_CONFIG       MT config file directory
+
+=item * config_file
+
+MT config file
+
+=item * ds_dir
+
+MT_DS_DIR       Datasource (live DB) directory
+
+=item * ref_dir
+
+MT_REF_DIR      Reference DB directory
+
+=item * db_file
+
+Absolute path to database file
+
+=item * data
+
+Test data
+
+=back
 
 =cut
 
 sub DEBUG() { 0 }
 
+use 5.010_001;
 use strict;
 use warnings;
-use Carp qw( cluck );
 use Data::Dumper;
 use File::Spec;
 use Path::Class;
+use Carp            qw( croak cluck carp confess );
 use File::Basename  qw( dirname basename );
 use File::Path      qw( make_path remove_tree );
 use Cwd             qw( getcwd );
@@ -56,9 +101,9 @@ use base qw( Pure::Test::MT::Environment
 
 my @ENV_VARS = qw( MT_HOME  MT_TEST_DIR  MT_CONFIG  MT_DS_DIR  MT_REF_DIR );
 
-use Log::Log4perl::Resurrector;         # Works for modules which use this one
-use Log::Log4perl qw( :resurrect );     # Works for this one
-use MT::Log::Log4perl qw(l4mtdump);
+use Log::Log4perl qw( :resurrect );            # Works on this module
+###l4p use Log::Log4perl::Resurrector;         # Works on modules which use this module
+###l4p use MT::Log::Log4perl qw( l4mtdump );
 ###l4p our $logger = MT::Log::Log4perl->new();
 
 __PACKAGE__->mk_classdata( %$_ )
@@ -303,6 +348,8 @@ sub ref_dir {
 
 =head2 app_class
 
+DOCUMENTATION NEEDED
+
 =cut
 sub app_class {
     my $self      = shift;
@@ -311,50 +358,69 @@ sub app_class {
     $app_class;
 }
 
+=head2 setup_db_file
+
+DOCUMENTATION NEEDED
+
+=cut
 sub setup_db_file {
     my $self       = shift;
     my $data_class = shift || $self->DataClass();
+    my $db_file    = $self->db_file;
     ###l4p $logger ||= MT::Log::Log4perl->new(); $logger->trace();
-
-    my $db_file = $self->db_file;
-    ###l4p $logger->debug("db_file path: $db_file");
 
     ###l4p $logger->info("Initializing data class $data_class");
     eval "require $data_class;"
         or die "Could not load $data_class: $@";
-    my $key    = $data_class->Key;
-    my $ref_db = file( $self->ref_dir, "$key.db" );
+    my $key     = $data_class->Key;
+    my $ref_db  = file( $self->ref_dir, "$key.db" );
     ###l4p $logger->debug("ref_db path: $ref_db");
+    ###l4p $logger->debug("db_file path: $db_file");
 
-    -e -z $_ and unlink($_)         # Remove if exists but empty
-        for ( $db_file, $ref_db );
-    
-    if ( -r -s $ref_db ) {  # Is readable, non-zero sized file
+    # An empty database is just as good as a non-existent one...
+    -e -z $_ and unlink($_) for ( $db_file, $ref_db );
 
-        if ( -e -w $db_file ) {
-            ###l4p $logger->info("Removing existing DB file $db_file");
-            unlink( $db_file );
-        }
+    $self->sync_ref_db( $ref_db );
 
-        ###l4p $logger->info("Using ref DB $ref_db ("
+    # # DB file exists, is read/write and non-zero-byte length
+    # if ( $db_file and -e -w -r -s $db_file ) {
+    #     ###l4p $logger->info('Found existing DB to use: '.$db_file );
+    # 
+    #     ###l4p $logger->info("Copying existing DB to ref DB $ref_db ("
+    #     ###l4p              .(-s $ref_db)." bytes); copying to $db_file");
+    #     unlink( $ref_db ) if -e -w $ref_db;
+    #     cp( $db_file, $ref_db );
+    # }
+    # elsif ( $ref_db and -e -w -r -s $ref_db ) {
+    #     cp( $ref_db, $db_file );
+    # }
+    # 
+    return $self;
+}
+
+sub sync_ref_db {
+    my $self    = shift;
+    my $ref_db  = shift;
+    my $db_file = $self->db_file;
+
+    state %ref_db;
+    $ref_db = $ref_db{Scalar::Util::refaddr($self)} ||= $ref_db;
+
+    # DB file exists, is read/write and non-zero-byte length
+    if ( ! -e "$ref_db" and -e -r -s "$db_file" ) {
+        ###l4p $logger->info('Found existing DB to use: '.$db_file );
+
+        ###l4p $logger->info("Copying existing DB to ref DB $ref_db ("
         ###l4p              .(-s $ref_db)." bytes); copying to $db_file");
+        # unlink( $ref_db ) if -e -w $ref_db;
+        cp( $db_file, $ref_db );
+    }
+    elsif ( ! -e "$db_file" and -e -r -s $ref_db ) {
         cp( $ref_db, $db_file );
     }
-    else {
-        if ( -e -w $ref_db ) {
-            ###l4p $logger->info("Removing unusable ref_db $ref_db");
-            unlink( $ref_db );
-        }
-
-        if ( -r -s $db_file ) {
-            ###l4p $logger->info("Copying new database $db_file ("
-            ###l4p               .(-s $db_file)." bytes) to ref DB $ref_db");
-            cp( $db_file, $ref_db );
-        }
-    }
     $self->ls_db();
-    $self;
 }
+
 
 =head2 init_db
 
@@ -364,65 +430,47 @@ DOCUMENTATION NEEDED
 sub init_db {
     my $self       = shift;
     my $data_class = shift || $self->DataClass();
+    my $db_file    = $self->db_file;
     ###l4p $logger ||= MT::Log::Log4perl->new(); $logger->trace();
     # local $Carp::Verbose = 8;
-    # print STDERR 'In init_db '.Carp::longmess();
+    # DEBUG and print STDERR 'In init_db '.Carp::longmess();
     ###l4p $logger->debug('In init_db called from '.(scalar caller));
 
-    my $db_file = $self->db_file;
-    my $key     = $data_class->Key;
-    my $ref_db  = file( $self->ref_dir, "$key.db" );
 
-    my $cfg;
-
-    # for ( $db_file, $ref_db ) {
-    #     -s $_ or unlink($_);          # Remove if exists but empty
-    # }
-
-    # if ( -r -s $ref_db ) {  # Is non-zero sized file
-    if ( -r -s $db_file ) {
-
+    if ( -e -r -w -s $db_file ) {
+        # use MT ();
         # my $mt = MT->instance( Config => $self->config_file )
-        #     or die "No MT object " . MT->errstr;
-        # MT::Object->dbi_driver->dbh(undef);
-        # 
-        # $cfg = $mt->config;
-        # my $abs_db_file = file( $db_file       )->absolute( $self->mt_dir );
-        # my $abs_cfg_db  = file( $cfg->Database )->absolute( $self->mt_dir );
+        #   or die "No MT object " . MT->errstr;
 
-        # $cfg->read_config_db();
-        ###l4p $logger->info("Using ref DB $ref_db ("
-        ###l4p              .(-s $ref_db)." bytes); copying to $db_file");
-        cp( $db_file, $ref_db );
-    }
-    else {
-        ###l4p $logger->info("No ref_db found at $ref_db; Constructing anew");
-        $self->init_newdb(@_);
         ###l4p $logger->info("Initializing upgrade");
-        $self->init_upgrade(@_);
+        # $self->init_upgrade(@_);
+        $self->sync_ref_db();
+        return $self ;
+    }
+    elsif ( -e $db_file ) {
+        unlink( $db_file );
     }
 
-    if ( -r -s $db_file ) {
-        ###l4p $logger->info("Copying new database $db_file ("
-        ###l4p               .(-s $db_file)." bytes) to ref DB $ref_db");
-        cp( $db_file, $ref_db );
-    }
-    else {
-        die "Neither ref DB $ref_db nor db file $db_file are readable.";
-    }
-
-    $self->ls_db();
+    # $self->init_newdb(@_);
+    # 
+    # Carp::confess("Could not initialize database $db_file")
+    #     unless -e -r -s $db_file;
+    # 
+    # $self->sync_ref_db();
+    # 
     $self;
 }
 
 =head2 init_newdb
+
+DOCUMENTATION NEEDED
 
 =cut
 sub init_newdb {
     my $self = shift;
     ###l4p $logger ||= MT::Log::Log4perl->new(); $logger->trace();
 
-    use MT;
+    use MT ();
     my $mt = MT->instance( Config => $self->config_file )
       or die "No MT object " . MT->errstr;
 
@@ -470,10 +518,16 @@ sub init_newdb {
         }
     }
 
+    ###l4p $logger->info("Initializing upgrade");
+    $self->init_upgrade(@_);
+    $self->ls_db();
+
     1;
 }
 
 =head2 init_upgrade
+
+DOCUMENTATION NEEDED
 
 =cut
 sub init_upgrade {
@@ -491,7 +545,7 @@ sub init_upgrade {
 
     MT->config->PluginSchemaVersion( {} );
     MT::Upgrade->do_upgrade( App => __PACKAGE__, User => {}, Blog => {} );
-        $self->ls_db();
+    $self->ls_db();
 
     eval {
         # line __LINE__ __FILE__
@@ -642,16 +696,25 @@ sub init_memcached {
 sub ls_db {
     my $self = shift;
     my ($ds, $ref) = ($self->ds_dir, $self->ref_dir);
+
+    state $last_res;
     my $res = `find $ds $ref -type f -ls  2>/dev/null`;
-    local $Log::Log4perl::caller_depth =
-          $Log::Log4perl::caller_depth + 1;
-    ###l4p $logger->debug($res);
-    print STDERR $res."\n";
+
+    my $fmt = $res eq ($last_res||'')   ? "%s (%d) Same as above\n"
+                                        : "%s (%d)\n  %s\n";
+    my $msg = sprintf $fmt, (caller(1))[3], __LINE__, $res;
+    DEBUG and print STDERR $msg;
+
+    ###l4p local $Log::Log4perl::caller_depth =
+    ###l4p       $Log::Log4perl::caller_depth + 1;
+    ###l4p $logger->debug($msg);
+
+    $last_res = $res;
 }
 
 
 sub progress {
-    # Carp::carp( join('; ', @_))
+    DEBUG and Carp::carp( join('; ', @_));
 }
 
 sub error {
@@ -663,22 +726,18 @@ sub error {
 
 sub show_variables {
     my $self = shift;
+    return unless DEBUG;
     print STDERR "# ENV $_: $ENV{$_}\n" foreach sort @ENV_VARS;
-    print STDERR map { "# VAR ".join(': ', @$_)."\n" } 
-                 map {[ $_ => $self->$_ ]}
-                 qw(test_dir ConfigFile mt_dir);
+    print STDERR map { "# VAR ".join(': ', @$_)."\n" }
+       map {[ $_ => $self->$_ ]}
+       qw(test_dir ConfigFile mt_dir);
 }
 
 sub DESTROY {
     my $self = shift;
-    if ( -r -w -s $self->db_file ) {
-        require Carp;
-        Carp::cluck "Removing database ".$self->db_file;
-        unlink( $self->db_file ) if -e $self->db_file;
-    }
-    else {
-        warn "Cannot remove database ".$self->db_file;
-    }
+    return unless -e $self->db_file;
+    DEBUG and warn "Removing database ".$self->db_file;
+    unlink( $self->db_file );
 }
 
 1;
