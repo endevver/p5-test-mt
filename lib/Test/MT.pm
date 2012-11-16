@@ -32,7 +32,7 @@ use Class::Load     ();
 use Data::Dumper    ();
 # use Package::Stash;
 
-use version 0.77; our $VERSION = qv('v1.2.0');               # shorthand
+use version 0.77; our $VERSION = qv('v1.3.0');               # shorthand
 
 # local $SIG{__WARN__} = \&Carp::cluck;
 # local $SIG{__DIE__} = \&Carp::confess;
