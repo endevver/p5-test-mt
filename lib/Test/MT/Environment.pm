@@ -2,10 +2,18 @@ package Pure::Test::MT::Environment;
 
 use base qw( Class::Accessor );
 
-__PACKAGE__->mk_accessors(qw(
-    mt_dir  test_dir  config_dir  config_file  ds_dir  ref_dir db_file
-    data
-));
+
+__PACKAGE__->mk_accessors(
+# Obj Attributes        %ENV            Description
+    'mt_dir'        ,#  MT_HOME         MT directory
+    'test_dir'      ,#  MT_TEST_DIR     Base directory for the tests
+    'config_dir'    ,#  MT_CONFIG       MT config file directory
+    'config_file'   ,#                  MT config file
+    'ds_dir'        ,#  MT_DS_DIR       Datasource (live DB) directory
+    'ref_dir'       ,#  MT_REF_DIR      Reference DB directory
+    'db_file'       ,#                  Absolute path to database file
+    'data'          ,#                  Test data
+);
 
 #########################################################################
 package Test::MT::Environment;
