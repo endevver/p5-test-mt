@@ -72,18 +72,6 @@ __PACKAGE__->mk_classdata( %$_ )
 
 =head1 SUBROUTINES/METHODS
 
-A separate section listing the public components of the module's interface.
-
-These normally consist of either subroutines that may be exported, or methods
-that may be called on objects belonging to the classes that the module
-provides.
-
-Name the section accordingly.
-
-In an object-oriented module, this section should begin with a sentence (of the
-form "An object of this class represents ...") to give the reader a high-level
-context to help them understand the methods that are subsequently described.
-
 =head2 init
 
 This method initializes the path-related variables necessary to run MT and
@@ -93,12 +81,6 @@ locate our own modules.
 sub init {
     my $self = shift;
     $self->init_paths() or return;
-    # print STDERR "# ENV $_: $ENV{$_}\n"
-    #     foreach qw( MT_HOME
-    #                 MT_TEST_DIR
-    #                 MT_CONFIG
-    #                 MT_DS_DIR
-    #                 MT_REF_DIR );
     $self;
 }
 
