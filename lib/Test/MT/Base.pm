@@ -119,30 +119,7 @@ sub construct_default {
 }
 
 
-
-sub env {
-    my $self = shift;
-    return @_ ? $self->{env} = shift : $self->{env};
-}
-
-
-
-sub app {
-    my $self = shift;
-    return @_ ? $self->{app} = shift : $self->{app};
-}
-
-
-
 sub init { shift }
-
-
-
-sub test_basename {
-    my $self = shift;
-    (split("::", ( ref $self || $self )))[1];
-}
-
 
 
 sub init_app {
@@ -164,7 +141,6 @@ sub init_app {
 }
 
 
-
 sub init_cms {
     my $pkg = shift;
     my ($cfg) = @_;
@@ -173,6 +149,23 @@ sub init_cms {
     MT::App::CMS->instance( $cfg ? ( Config => $cfg ) : () );
 }
 
+
+sub env {
+    my $self = shift;
+    return @_ ? $self->{env} = shift : $self->{env};
+}
+
+
+sub app {
+    my $self = shift;
+    return @_ ? $self->{app} = shift : $self->{app};
+}
+
+
+sub test_basename {
+    my $self = shift;
+    (split("::", ( ref $self || $self )))[1];
+}
 
 
 sub finish { shift }

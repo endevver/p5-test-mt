@@ -18,12 +18,12 @@ This class is an MT::App subclass responsible for initialization and
 execution of test application.
 
 =cut
-
 use strict;
 use warnings;
-
 # Handle cwd = MT_DIR, MT_DIR/t
 use lib 't/lib', 'extlib', 'lib', '../lib', '../extlib';
+
+use base qw( MT::App );
 
 use Data::Dumper;
 use Carp qw( longmess croak confess carp );
@@ -33,22 +33,17 @@ use List::Util   qw( first );
 use Scalar::Util qw( blessed looks_like_number );
 use File::Temp   qw( tempfile );
 use File::Path   qw( make_path remove_tree );
-
-# local $SIG{__WARN__} = \&Carp::cluck;
-# local $SIG{__DIE__} = \&Carp::confess;
-use Data::Printer { colored => 0, caller_info => 1 };
-use Log::Log4perl::Resurrector;
-# The above works for LATER loaded modules, but it's too late for this one
 use Log::Log4perl qw( :resurrect );
-use MT::Log::Log4perl qw(l4mtdump);
+###l4p use Log::Log4perl::Resurrector;
+###l4p use MT::Log::Log4perl qw(l4mtdump);
 ###l4p our $logger = MT::Log::Log4perl->new();
 
 use Test::MT::Util qw( debug_handle );
+use MT;
+
 
 sub DEBUG { 0 }
 
-use base qw( MT::App );
-use MT;
 
 my ( $CORE_TIME, $session_id );
 my $session_username = '';
@@ -69,7 +64,6 @@ sub id { 'testapp' }
 sub init {
     my $self = shift;
     my %args = @_;
-    # $self->revert_component_init( reinit => 0 );
     $self->SUPER::init( @_ );
     $self->override_core_methods();
     MT->set_instance( $self );
@@ -77,67 +71,6 @@ sub init {
     $self;
 }
 
-=pod
-    MT::init
-
-    sub init {
-        my $mt    = shift;
-        my %param = @_;
-
-        $mt->bootstrap() unless $MT_DIR;
-        $mt->{mt_dir}     = $MT_DIR;
-        $mt->{config_dir} = $CFG_DIR;
-        $mt->{app_dir}    = $APP_DIR;
-
-        $mt->init_callbacks();
-
-        ## Initialize the language to the default in case any errors occur in
-        ## the rest of the initialization process.
-        $mt->init_config( \%param ) or return;
-        require MT::Plugin;
-        $mt->init_addons(@_)        or return;
-        $mt->init_config_from_db( \%param ) or return;
-        $mt->init_debug_mode;
-        $mt->init_plugins(@_)       or return;
-        $plugins_installed = 1;
-        $mt->init_schema();
-        $mt->init_permissions();
-
-        # Load MT::Log so constants are available
-        require MT::Log;
-
-        $mt->run_callbacks('post_init', $mt, \%param);
-        return $mt;
-    }
-
-    MT::App::init
-    
-    sub init {
-        my $app   = shift;
-        my %param = @_;
-        $app->{apache} = $param{ApacheObject} if exists $param{ApacheObject};
-
-        # start tracing even prior to 'init'
-        local $SIG{__WARN__} = sub { $app->trace( $_[0] ) };
-        $app->SUPER::init(%param) or return;
-        $app->{vtbl}                 = {};
-        $app->{is_admin}             = 0;
-        $app->{template_dir}         = 'cms';          #$app->id;
-        $app->{user_class}           = 'MT::Author';
-        $app->{plugin_template_path} = 'tmpl';
-        $app->run_callbacks( 'init_app', $app, @_ );
-
-        if ( $MT::DebugMode & 128 ) {
-            MT->add_callback( 'pre_run',  1, $app, sub { $app->pre_run_debug } );
-            MT->add_callback( 'takedown', 1, $app, sub { $app->post_run_debug } );
-        }
-        $app->{vtbl} = $app->registry("methods");
-        $app->init_request(@_);
-        return $app;
-    }
-
-
-=cut
 
 {
     my $Database;
@@ -202,117 +135,6 @@ sub init_time {
     *CORE::GLOBAL::time = sub { $CORE_TIME };
     *CORE::GLOBAL::sleep = sub { $CORE_TIME += shift };
 }
-
-=head2 revert_component_init
-
-our (
-    $plugin_sig, $plugin_envelope, $plugin_registry,
-
-
-);
-my %Text_filters;
-
-# For state determination in MT::Object
-our $plugins_installed;
-
-my $types = MT->registry('object_types');
-
-=cut
-sub revert_component_init {
-    my $pkg   = shift;
-    my %param = @_;
-    my $debug = $pkg->debug_handle($param{output});
-    my $mt    = MT->instance;
-    # MT package scalar variables we need to reset
-    my @global_scalars = qw(    plugin_sig         plugin_envelope
-      plugin_registry    plugins_installed
-      plugin_full_path                       );
-    my $c_hash    = \%MT::Components;    # Aliased...
-    my $c_arry    = \@MT::Components;    #  for...
-    my $p_hash    = \%MT::Plugins;       #   brevity!
-    my $inst      = \$MT::mt_inst;
-    my $inst_hash = \%MT::mt_inst;
-    $debug->( 'INITIAL %MT::Components: ' . Dumper([keys %$c_hash]) );
-
-    # our %CallbackAlias;
-    # our $CallbacksEnabled = 1;
-    # my %CallbacksEnabled;
-    # my @Callbacks;
-    # our $CB_ERR;
-    # my %addons;
-    # our %Commenter_Auth;
-    # our %Captcha_Providers;
-
-    # We are reinitializing everything *BUT* the core component
-    # so we need to preserve it before destroying the rest.
-    # Die if it's not initialized because that's just wrong
-    my $core = delete $c_hash->{core}; # or die "No core component found!";
-
-    $debug->(   'Undefining all MT package scalar vars '
-              . 'related to component/plugin initialization' );
-    no strict 'refs';
-    undef ${"MT::".$_} or $debug->("\t\$MT::$_") for @global_scalars;
-
-    {
-
-        # As it says in MT.pm:
-        #   Reset the Text_filters hash in case it was preloaded by plugins
-        #   by calling all_text_filters (Markdown in particular does this).
-        #   Upon calling all_text_filters again, it will be properly loaded
-        #   by querying the registry.
-        no warnings 'once';
-        %MT::Text_filters = ();
-    }
-
-    $debug->('Unloading plugins\' perl init scripts from %INC cache');
-
-    # This forces both perl and MT to treat the file as if it's never been
-    # loaded previously which is necessary for making MT process the plugin
-    # as it does in its own init methods.
-    foreach my $pdata ( values %$p_hash ) {
-        my $path = first { defined($_) and /\.pl/i }
-                    $pdata->{object}{ "full_path", "path" };
-        next unless $path;
-        delete $INC{$path} and $debug->("\t$path");
-    }
-
-
-    # And finally: Re-initialize %MT::Components and @MT::Components
-    # with only the 'core' component and undef %MT::Plugins completely
-    @MT::Components = ( $core );
-    %MT::Components = ( core => $core );
-    %MT::Plugins    = ();
-    @MT::Plugins    = ();
-
-    $debug->( 'Final %MT::Components: ' . Dumper([keys %$c_hash]) );
-
-    return unless $param{reinit};
-
-    # Find and initialize all non-core components
-    #-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#
-    my %path_params
-      = ( Config => $mt->{config_dir}, Directory => $mt->{mt_dir} );
-    my $killme = sub { die "FAIL " . longmess() };
-
-    #-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#
-    eval {
-        $debug->('Re-initializing addons');
-        $mt->init_addons() or $killme->();
-
-        $mt->init_config_from_db( \%path_params ) or $killme->();
-        $mt->init_debug_mode;
-
-        $debug->('Re-initializing plugins');
-        $mt->init_plugins() or $killme->();
-
-        # Set the plugins_installed flag signalling that it's
-        # okay to initialize the schema and use the database.
-        no warnings 'once';
-        $MT::plugins_installed = 1;
-    };
-    die "Failed: $@" . longmess() if $@;
-    $debug->('Plugins re-initialization complete');
-} ## end sub revert_component_init
 
 =head2 mt_package_hashvars_dump
 
@@ -538,32 +360,6 @@ sub add_plugin_test_libs {
     }
     1;
 }
-
-=head2 find_addon_libs
-
-=cut
-sub find_addon_libs {
-    my $addons_full_path = shift;
-    my @libs;
-    opendir ADDONS, $addons_full_path;
-    my @addons = readdir ADDONS;
-    closedir ADDONS;
-    for (@addons) {
-        my $plugin_full_path = File::Spec->catdir( $addons_full_path, $_ );
-        next unless -d $plugin_full_path;
-        next if $_ eq '..';
-        opendir SUBDIR, $plugin_full_path;
-        my @plugin_files = readdir SUBDIR;
-        closedir SUBDIR;
-        for my $file (@plugin_files) {
-            if ( $file eq 'lib' || $file eq 'extlib' ) {
-                my $plib = File::Spec->catdir( $plugin_full_path, $file );
-                unshift @libs, $plib if -d $plib;
-            }
-        }
-    }
-    return \@libs;
-} ## end sub find_addon_libs
 
 =head2 override_core_methods
 
