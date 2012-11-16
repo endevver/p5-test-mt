@@ -88,7 +88,6 @@ sub init_config_from_db {
     my $mt = shift;
     my ($param) = @_;
     my $cfg = $mt->config;
-
     # Tell any instantiated drivers to reconfigure themselves as necessary
     require MT::ObjectDriverFactory;
     if (MT->config('ObjectDriver')) {

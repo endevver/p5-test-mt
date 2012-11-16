@@ -82,13 +82,10 @@ sub import {
     goto &Test::Builder::Module::import;
 }
 
-
-
 sub construct_default {
     my $pkg = shift;
 
     my $test = $pkg->new();
-
     require Test::MT::Environment;
     my $env = Test::MT::Environment->new()
         or die "Could not create \$test->env";
