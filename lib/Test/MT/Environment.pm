@@ -34,14 +34,18 @@ Class representing the environment under which all all MT tests are executing
 
 =cut
 
+sub DEBUG() { 0 }
+
 use strict;
 use warnings;
 use Carp qw( cluck );
 use Data::Dumper;
 use File::Spec;
+use Path::Class;
 use File::Basename  qw( dirname basename );
 use File::Path      qw( make_path remove_tree );
 use Cwd             qw( getcwd );
+use FindBin         qw( $Bin );
 use File::Copy      qw( cp );
 use autodie         qw(:all);
 use Test::MT::Util  qw( debug_handle );
@@ -50,17 +54,18 @@ use base qw( Pure::Test::MT::Environment
              Class::Data::Inheritable
              MT::ErrorHandler );
 
-sub DEBUG() { 0 }
+my @ENV_VARS = qw( MT_HOME  MT_TEST_DIR  MT_CONFIG  MT_DS_DIR  MT_REF_DIR );
 
-use Log::Log4perl::Resurrector;
-# The above works for LATER loaded modules, but it's too late for this one
-use Log::Log4perl qw( :resurrect );
+use Log::Log4perl::Resurrector;         # Works for modules which use this one
+use Log::Log4perl qw( :resurrect );     # Works for this one
 use MT::Log::Log4perl qw(l4mtdump);
 ###l4p our $logger = MT::Log::Log4perl->new();
 
 __PACKAGE__->mk_classdata( %$_ )
     for (
-            { DBFile        => 'mt.db'                               },
+            # Use different DB filenames for each process to allow
+            # parallel test execution.  e.g. mt-727181.db
+            { DBFile        => "mt-$$.db"                            },
             { ConfigFile    => 'test.cfg'                            },
             { DatabaseClass => join('::', __PACKAGE__, 'Database')   },
             { DataClass     => do {
@@ -83,17 +88,6 @@ sub init {
     $self->init_paths() or return;
     $self;
 }
-
-sub progress {
-    # Carp::carp( join('; ', @_))
-}
-
-sub error {
-    my $self = shift;
-    Carp::cluck( join( '. ', $@ ));
-    $self->SUPER::error(@_);
-}
-
 
 =head2 init_paths
 
@@ -129,12 +123,14 @@ The directory containing our pristine test Database (if using SQLite)
 =cut
 sub init_paths {
     my $self = shift;
-
     return unless $ENV{MT_HOME}     = $self->mt_dir()
               and $ENV{MT_TEST_DIR} = $self->test_dir()
               and $ENV{MT_CONFIG}   = $self->config_file()
               and $ENV{MT_DS_DIR}   = $self->ds_dir()
               and $ENV{MT_REF_DIR}  = $self->ref_dir();
+    DEBUG() && $self->show_variables;
+
+    $self->setup_db_file();
     1;
 }
 
@@ -152,15 +148,9 @@ sub mt_dir {
     return $self->SUPER::mt_dir() if $self->SUPER::mt_dir;
     return $self->SUPER::mt_dir(@_) if @_;
 
-    my $dir = $ENV{MT_HOME}
-          ||= do {
-                    my @pieces = File::Spec->splitdir( getcwd() );
-                    pop @pieces unless -e 'mt.cgi';
-                    File::Spec->catdir( @pieces );
-                 };
+    die "MT_HOME environment variable not set" unless $ENV{MT_HOME};
 
-    $dir = File::Spec->rel2abs( $dir, getcwd() )
-        or return $self->error('Could not determine MT_HOME directory');
+    my $dir = dir( $ENV{MT_HOME} )->absolute;
 
     -d $dir
         or return $self->error('Bad MT_HOME directory: '. $ENV{MT_HOME} );
@@ -168,7 +158,7 @@ sub mt_dir {
     chdir $dir
         or die "Can't cd to MT_HOME directory, $dir: $!\n";
 
-    return $self->mt_dir( $ENV{MT_HOME} = $dir );
+    return $self->mt_dir( $ENV{MT_HOME} = "$dir" );
 }
 
 
@@ -182,26 +172,29 @@ Root directory containing tests
 sub test_dir {
     my $self = shift;
     return $self->SUPER::test_dir() if $self->SUPER::test_dir;
-    return $self->SUPER::test_dir(@_) if @_;
+    return $self->SUPER::test_dir( dir(@_) ) if @_;
 
-    $ENV{MT_TEST_DIR} ||= File::Spec->rel2abs( dirname( $0 ), $self->mt_dir );
-    return $self->test_dir( $ENV{MT_TEST_DIR} );
+    $ENV{MT_TEST_DIR} ||= file($0)->parent->absolute( $self->mt_dir )->stringify;
+    return $self->test_dir( $ENV{MT_TEST_DIR} );  # From FindBin
 }
+# ENV MT_CONFIG: /Users/jay/Projects/SmartDirectory/t/test.cfg
+# ENV MT_REF_DIR: /Users/jay/Projects/SmartDirectory/t/ref
+# ENV MT_TEST_DIR: /Users/jay/Projects/SmartDirectory/t
 
 
 =head2 config_dir
 
 DOCUMENTATION NEEDED
 dirname( $ENV{MT_CONFIG} ) || $self->mt_dir } },
-
+Path::Class::File
 =cut
 sub config_dir {
     my $self = shift;
     return $self->SUPER::config_dir() if $self->SUPER::config_dir;
-    return $self->SUPER::config_dir(@_) if @_;
+    return $self->SUPER::config_dir( dir( @_ )) if @_;
     return $self->config_dir(
-        $self->config_file ? dirname( $self->config_file )
-                           : $self->mt_dir
+        $self->config_file ? file( $self->config_file )->parent
+                           :  $self->mt_dir
     );
 }
 
@@ -216,14 +209,12 @@ The file which contains MT config information
 sub config_file {
     my $self = shift;
     return $self->SUPER::config_file() if $self->SUPER::config_file;
-    return $self->SUPER::config_file(@_) if @_;
+    return $self->SUPER::config_file( file(@_) ) if @_;
 
-    my $file = $ENV{MT_CONFIG}
-           || File::Spec->catfile( $self->test_dir, $self->ConfigFile );
-
-    $file = File::Spec->rel2abs( $file, $self->mt_dir );
-
-    $self->config_file( $ENV{MT_CONFIG} = $file );
+    my $file = file(     $ENV{MT_CONFIG}
+                    // ( $self->test_dir, $self->ConfigFile )
+      )->absolute( $self->mt_dir );
+    $self->config_file( $ENV{MT_CONFIG} = "$file" );
 }
 
 
@@ -238,13 +229,13 @@ The directory containing our working test Database (if using SQLite)
 sub ds_dir {
     my $self = shift;
     return $self->SUPER::ds_dir() if $self->SUPER::ds_dir;
-    return $self->SUPER::ds_dir(@_) if @_;
+    return $self->SUPER::ds_dir( dir( @_ )) if @_;
 
-    my $dir = File::Spec->catdir( $self->config_dir, 'db' );
+    my $dir = dir( $ENV{MT_DS_DIR} || ($self->config_dir, 'db') );
 
     -d $dir or make_path( $dir, {error => \my $err} );
 
-    return $self->ds_dir( $ENV{MT_DS_DIR} = $dir )
+    return $self->ds_dir( $ENV{MT_DS_DIR} = "$dir" )
         unless ref $err and @$err;
 
     my $msg = '';
@@ -268,9 +259,12 @@ The path to our working database file (if using SQLite)
 sub db_file {
     my $self = shift;
     return $self->SUPER::db_file() if $self->SUPER::db_file;
-    return $self->SUPER::db_file(@_) if @_;
+    return $self->SUPER::db_file( file(@_) ) if @_;
 
-    $self->db_file( File::Spec->catfile( $self->ds_dir, $self->DBFile ) );
+    my $db_file = file( $self->ds_dir, $self->DBFile );
+    -e $db_file and die "Database file $db_file already exists.  Aborting!";
+
+    $self->db_file( $db_file );
 }
 
 
@@ -284,13 +278,13 @@ The directory containing our pristine test Database (if using SQLite)
 sub ref_dir {
     my $self = shift;
     return $self->SUPER::ref_dir() if $self->SUPER::ref_dir;
-    return $self->SUPER::ref_dir(@_) if @_;
+    return $self->SUPER::ref_dir( dir(@_) ) if @_;
 
-    my $dir = File::Spec->catdir( $self->config_dir, 'ref' );
+    my $dir = dir( $self->config_dir, 'ref' );
 
     -d $dir or make_path( $dir, {error => \my $err} );
 
-    return $self->ref_dir( $ENV{MT_REF_DIR} = $dir )
+    return $self->ref_dir( $ENV{MT_REF_DIR} = "$dir" )
         unless $err and @$err;
 
     my $msg = '';
@@ -317,6 +311,51 @@ sub app_class {
     $app_class;
 }
 
+sub setup_db_file {
+    my $self       = shift;
+    my $data_class = shift || $self->DataClass();
+    ###l4p $logger ||= MT::Log::Log4perl->new(); $logger->trace();
+
+    my $db_file = $self->db_file;
+    ###l4p $logger->debug("db_file path: $db_file");
+
+    ###l4p $logger->info("Initializing data class $data_class");
+    eval "require $data_class;"
+        or die "Could not load $data_class: $@";
+    my $key    = $data_class->Key;
+    my $ref_db = file( $self->ref_dir, "$key.db" );
+    ###l4p $logger->debug("ref_db path: $ref_db");
+
+    -e -z $_ and unlink($_)         # Remove if exists but empty
+        for ( $db_file, $ref_db );
+    
+    if ( -r -s $ref_db ) {  # Is readable, non-zero sized file
+
+        if ( -e -w $db_file ) {
+            ###l4p $logger->info("Removing existing DB file $db_file");
+            unlink( $db_file );
+        }
+
+        ###l4p $logger->info("Using ref DB $ref_db ("
+        ###l4p              .(-s $ref_db)." bytes); copying to $db_file");
+        cp( $ref_db, $db_file );
+    }
+    else {
+        if ( -e -w $ref_db ) {
+            ###l4p $logger->info("Removing unusable ref_db $ref_db");
+            unlink( $ref_db );
+        }
+
+        if ( -r -s $db_file ) {
+            ###l4p $logger->info("Copying new database $db_file ("
+            ###l4p               .(-s $db_file)." bytes) to ref DB $ref_db");
+            cp( $db_file, $ref_db );
+        }
+    }
+    $self->ls_db();
+    $self;
+}
+
 =head2 init_db
 
 DOCUMENTATION NEEDED
@@ -328,78 +367,51 @@ sub init_db {
     ###l4p $logger ||= MT::Log::Log4perl->new(); $logger->trace();
     # local $Carp::Verbose = 8;
     # print STDERR 'In init_db '.Carp::longmess();
-    ###l4p $logger->debug('In init_db called from '.Carp::longmess());
-    
-    ###l4p $logger->info("Initializing data class $data_class");
-    eval "require $data_class;"
-        or die "Could not load $data_class: $@";
-
-    -d $self->ds_dir
-        or die sprintf( "DS directory not found: %s", $self->ds_dir );
+    ###l4p $logger->debug('In init_db called from '.(scalar caller));
 
     my $db_file = $self->db_file;
-    ###l4p $logger->debug("db_file path: $db_file");
-
-    ### TEMP COMMENTED
-    # if ( -e -w $db_file ) {
-    #     ###l4p $logger->info("Removing DB file $db_file");
-    #     cluck( "UNLINKING DB FILE" );
-    #     unlink( $db_file );
-    # }
-
-    my $key    = $data_class->Key;
-    my $ref_db = File::Spec->catfile( $self->ref_dir, $key, $self->DBFile );
-    ###l4p $logger->debug("ref_db path: $ref_db");
-    ###l4p $logger->debug(`ls -al $db_file $ref_db`);
+    my $key     = $data_class->Key;
+    my $ref_db  = file( $self->ref_dir, "$key.db" );
 
     my $cfg;
-    if ( -r -s $ref_db ) {  # Is non-zero sized file
 
-        ###l4p $logger->info("Using ref DB $ref_db; copying to $db_file");
-        cp( $ref_db, $db_file );
+    # for ( $db_file, $ref_db ) {
+    #     -s $_ or unlink($_);          # Remove if exists but empty
+    # }
 
-        my $mt = MT->instance( Config => $self->config_file )
-            or die "No MT object " . MT->errstr;
-        MT::Object->dbi_driver->dbh(undef);
+    # if ( -r -s $ref_db ) {  # Is non-zero sized file
+    if ( -r -s $db_file ) {
 
-        $cfg = $mt->config;
-        $cfg->read_config_db();
+        # my $mt = MT->instance( Config => $self->config_file )
+        #     or die "No MT object " . MT->errstr;
+        # MT::Object->dbi_driver->dbh(undef);
+        # 
+        # $cfg = $mt->config;
+        # my $abs_db_file = file( $db_file       )->absolute( $self->mt_dir );
+        # my $abs_cfg_db  = file( $cfg->Database )->absolute( $self->mt_dir );
 
-        die "Database mismatch, should be ".$self->db_file
-            unless File::Spec->rel2abs( $self->db_file, $self->mt_dir )
-                eq File::Spec->rel2abs( $cfg->Database, $self->mt_dir );
+        # $cfg->read_config_db();
+        ###l4p $logger->info("Using ref DB $ref_db ("
+        ###l4p              .(-s $ref_db)." bytes); copying to $db_file");
+        cp( $db_file, $ref_db );
     }
     else {
-        ###l4p $logger->info("Constructing ref DB from scratch");
+        ###l4p $logger->info("No ref_db found at $ref_db; Constructing anew");
         $self->init_newdb(@_);
         ###l4p $logger->info("Initializing upgrade");
         $self->init_upgrade(@_);
-        make_path( dirname( $ref_db ), { error => \(my $err) });
-
-        if ( ref $err and @$err ) {
-            my $msg = '';
-            for my $diag (@$err) {
-                my ($file, $message) = %$diag;
-                if ($file eq '') {
-                    $msg .= "General error: $message\n";
-                }
-                else {
-                    $msg .= "Could not create path $file: $message\n";
-                }
-            }
-            die $msg;
-        }
-
-        if ( -r -s $db_file ) {
-            ###l4p $logger->debug(`ls -al $db_file $ref_db 2>/dev/null`);
-            ###l4p $logger->info("Copying ref DB $db_file to $ref_db");
-            cp( $db_file, $ref_db ) ;
-            ###l4p $logger->debug(`ls -al $db_file $ref_db  2>/dev/null`);
-        }
-        else {
-            ###l4p $logger->info("NOT Copying zero-sized ref DB $db_file to $ref_db");
-        }
     }
+
+    if ( -r -s $db_file ) {
+        ###l4p $logger->info("Copying new database $db_file ("
+        ###l4p               .(-s $db_file)." bytes) to ref DB $ref_db");
+        cp( $db_file, $ref_db );
+    }
+    else {
+        die "Neither ref DB $ref_db nor db file $db_file are readable.";
+    }
+
+    $self->ls_db();
     $self;
 }
 
@@ -438,6 +450,7 @@ sub init_newdb {
               or die $@;
         }
     }
+    $self->ls_db();
 
     # Clear existing database tables
     my $driver = MT::Object->driver();
@@ -474,9 +487,11 @@ sub init_upgrade {
         User    => {},
         Blog    => {}
     );
+    $self->ls_db();
 
     MT->config->PluginSchemaVersion( {} );
     MT::Upgrade->do_upgrade( App => __PACKAGE__, User => {}, Blog => {} );
+        $self->ls_db();
 
     eval {
         # line __LINE__ __FILE__
@@ -486,6 +501,7 @@ sub init_upgrade {
     };
     require MT::ObjectDriver::Driver::Cache::RAM;
     MT::ObjectDriver::Driver::Cache::RAM->clear_cache();
+    $self->ls_db();
 
     1;
 } ## end sub init_upgrade
@@ -622,6 +638,48 @@ sub init_memcached {
     };
 }
 
+
+sub ls_db {
+    my $self = shift;
+    my ($ds, $ref) = ($self->ds_dir, $self->ref_dir);
+    my $res = `find $ds $ref -type f -ls  2>/dev/null`;
+    local $Log::Log4perl::caller_depth =
+          $Log::Log4perl::caller_depth + 1;
+    ###l4p $logger->debug($res);
+    print STDERR $res."\n";
+}
+
+
+sub progress {
+    # Carp::carp( join('; ', @_))
+}
+
+sub error {
+    my $self = shift;
+    Carp::cluck( join( '. ', $@ ));
+    $self->SUPER::error(@_);
+}
+
+
+sub show_variables {
+    my $self = shift;
+    print STDERR "# ENV $_: $ENV{$_}\n" foreach sort @ENV_VARS;
+    print STDERR map { "# VAR ".join(': ', @$_)."\n" } 
+                 map {[ $_ => $self->$_ ]}
+                 qw(test_dir ConfigFile mt_dir);
+}
+
+sub DESTROY {
+    my $self = shift;
+    if ( -r -w -s $self->db_file ) {
+        require Carp;
+        Carp::cluck "Removing database ".$self->db_file;
+        unlink( $self->db_file ) if -e $self->db_file;
+    }
+    else {
+        warn "Cannot remove database ".$self->db_file;
+    }
+}
 
 1;
 

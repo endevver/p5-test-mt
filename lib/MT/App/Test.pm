@@ -36,7 +36,7 @@ use File::Path   qw( make_path remove_tree );
 
 # local $SIG{__WARN__} = \&Carp::cluck;
 # local $SIG{__DIE__} = \&Carp::confess;
-
+use Data::Printer { colored => 0, caller_info => 1 };
 use Log::Log4perl::Resurrector;
 # The above works for LATER loaded modules, but it's too late for this one
 use Log::Log4perl qw( :resurrect );
@@ -68,12 +68,41 @@ sub id { 'testapp' }
 =cut
 sub init {
     my $self = shift;
+    my %args = @_;
     # $self->revert_component_init( reinit => 0 );
     $self->SUPER::init( @_ );
     $self->override_core_methods();
     MT->set_instance( $self );
     $self->add_callback( 'post_init', 1, undef, \&add_plugin_test_libs );
     $self;
+}
+
+{
+    my $Database;
+
+    sub set_database {
+        my $mt = shift;
+        my $cfg = $mt->{cfg};
+        warn "no config yet" and return unless $cfg;
+        $cfg->set( 'database', $Database->stringify );
+        warn 'Database set to '.$cfg->get( 'database' );
+    }
+
+    sub init_config {
+        my $mt       = shift;
+        my ($param)  = @_;
+        $Database = delete $param->{TestDatabase};
+        warn 'Got $Database from init_config params: '.$Database;
+
+        unless ( $mt->SUPER::init_config( $param ) ) {
+            warn 'Superclass init_config returned false.  Error? '.$mt->errstr;
+            return;
+        }
+
+        $mt->set_database();
+
+        1;
+    }
 }
 
 sub init_plugins {

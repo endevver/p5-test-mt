@@ -91,12 +91,15 @@ sub construct_default {
         or die "Could not create \$test->env";
     $test->env( $env );
 
-    my $app = $test->init_app()
-        or die "No MT object " . MT->errstr;
-    $test->app( $app );
+    $env->db_file or die "No Database file value for config to use";
 
     $env->init()    or confess "Init error: "   . $env->errstr;
     $env->init_db() or confess "Init DB error: ". $env->errstr;
+
+    my $app = $test->init_app( TestDatabase =>  $env->db_file )
+        or die "No MT object " . MT->errstr;
+    $test->app( $app );
+
 
     my $data = $env->init_data( file => './data/bootstrap_env.yaml' )
                    or die "Error creating test data: ".$env->errstr;
@@ -139,13 +142,15 @@ sub test_basename {
 
 
 sub init_app {
-    my $pkg = shift;
-    my $env = $pkg->env;
+    my $pkg  = shift;
+    my %args = @_;
+    my $env  = $pkg->env;
     
     my $app_class = $env->app_class;
     my $app       = $app_class->construct(
         Config => $env->config_file,
-        App    => $app_class
+        App    => $app_class,
+             %args
     )
         or die "No MT object " . MT->errstr;
 
