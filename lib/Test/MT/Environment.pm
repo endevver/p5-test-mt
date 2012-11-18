@@ -169,13 +169,12 @@ The directory containing our pristine test Database (if using SQLite)
 =cut
 sub init_paths {
     my $self = shift;
-    return unless $ENV{MT_HOME}     = $self->mt_dir()
-              and $ENV{MT_TEST_DIR} = $self->test_dir()
-              and $ENV{MT_CONFIG}   = $self->config_file()
-              and $ENV{MT_DS_DIR}   = $self->ds_dir()
-              and $ENV{MT_REF_DIR}  = $self->ref_dir();
+    $ENV{MT_HOME}     = $self->mt_dir();
+    $ENV{MT_TEST_DIR} = $self->test_dir();
+    $ENV{MT_CONFIG}   = $self->config_file();
+    $ENV{MT_DS_DIR}   = $self->ds_dir();
+    $ENV{MT_REF_DIR}  = $self->ref_dir();
     DEBUG() && $self->show_variables;
-
     1;
 }
 
@@ -197,8 +196,6 @@ sub setup_db_file {
         or die "Could not load $data_class: $@";
     my $key     = $data_class->Key;
     my $ref_db  = file( $self->ref_dir, "$key.db" );
-    ###l4p $logger->debug("ref_db path: $ref_db");
-    ###l4p $logger->debug("db_file path: $db_file");
 
     # An empty database is just as good as a non-existent one...
     -e -z $_ and unlink($_) for ( $db_file, $ref_db );
@@ -250,7 +247,8 @@ sub mt_dir {
     return $self->SUPER::mt_dir() if $self->SUPER::mt_dir;
     return $self->SUPER::mt_dir(@_) if @_;
 
-    die "MT_HOME environment variable not set" unless $ENV{MT_HOME};
+    $ENV{MT_HOME}
+        or die "MT_HOME environment variable not set";
 
     my $dir = dir( $ENV{MT_HOME} )->absolute;
 
@@ -289,7 +287,7 @@ Path::Class::File
 =cut
 sub config_dir {
     my $self = shift;
-    return $self->SUPER::config_dir() if $self->SUPER::config_dir;
+    return $self->SUPER::config_dir if $self->SUPER::config_dir;
     return $self->SUPER::config_dir( dir( @_ )) if @_;
     return $self->config_dir(
         $self->config_file ? file( $self->config_file )->parent
@@ -310,10 +308,14 @@ sub config_file {
     return $self->SUPER::config_file() if $self->SUPER::config_file;
     return $self->SUPER::config_file( file(@_) ) if @_;
 
-    my $file = file(     $ENV{MT_CONFIG}
-                    // ( $self->test_dir, $self->ConfigFile )
-      )->absolute( $self->mt_dir );
-    $self->config_file( $ENV{MT_CONFIG} = "$file" );
+    my @paths = grep { -e -r -s } 
+                 map { file( @$_ )->absolute( $self->mt_dir ) }
+                 (
+                    defined $ENV{MT_CONFIG} ? [ $ENV{MT_CONFIG} ] : (),
+                    [ $self->test_dir, $self->ConfigFile ]
+                );
+
+    $self->config_file( $ENV{MT_CONFIG} = shift @paths );
 }
 
 
