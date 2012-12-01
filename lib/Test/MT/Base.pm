@@ -112,28 +112,32 @@ sub construct_default {
     my $pkg  = shift || scalar caller;
     my $test = $pkg->new;
 
-    require Test::MT::Environment;
-    my $env = Test::MT::Environment->new()
-        or die "Could not create \$test->env";
-
+    my $env = try {
+        require Test::MT::Environment;
+        my $e = Test::MT::Environment->new->init();
+        $e->db_file or die "env->db_file undefined";
+        $e;
+    }
+    catch { Carp::confess( "Error initializing test environment: $_" ) };
     $test->env( $env );
-    $env->init()    or Carp::confess "Init error: "   . $env->errstr;
-    # $env->init_db() or Carp::confess "Init DB error: ". $env->errstr;
 
-    my $app      = $test->init_app( TestDatabase =>  $env->db_file )
-        or die "No MT object " . MT->errstr;
+    my $app
+        =  try { $test->init_app( TestDatabase =>  $env->db_file ) }
+         catch { Carp::confess( "Error initializing test app: $_" ) };
     $test->app( $app );
 
-    my $data     = $env->init_data( file => './data/bootstrap_env.yaml' )
-        or die "Error creating test data: ".$env->errstr;
+    my $data
+        =  try { $env->init_data( file => './data/bootstrap_env.yaml' ) }
+         catch { Carp::confess( "Error initializing test data: $_" ) };
 
-    my $env_data = $data->install()
-        or die "Could not create \$env_data";
+    my $env_data
+        =  try { $data->install(); }
+         catch { Carp::confess( "Could not create \$env_data: $_" ) };
 
-    $env->init_upgrade()
-        or die "Could not upgrade DB";
+    try   { $env->init_upgrade() }
+    catch { Carp::confess("Could not upgrade DB") };
 
-    die 'Cannot app' unless $test->can('app');
+    Carp::confess('Cannot app') unless $test->can('app');
     $test;
 }
 
@@ -142,21 +146,29 @@ sub init { shift }
 
 
 sub init_app {
-    my $pkg  = shift;
-    my %args = @_;
-    my $env  = $pkg->env;
-    
+    my $self      = shift;
+    my %args      = @_;
+    my $env       = $self->env
+        or Carp::confess('init_app called with no test environment');
     my $app_class = $env->app_class;
-    my $app       = $app_class->construct(
+
+    %args = (
         Config => $env->config_file,
         App    => $app_class,
-             %args
-    )
-        or die "No MT object " . MT->errstr;
+        %args
+    );
 
-    MT->set_instance( $app );
+    if ( my $app = $app_class->construct( %args ) ) {
+        MT->set_instance( $app );
+        return $app;
+    }
 
-    return $app;
+    my $error  = '';
+    my $mterr  = MT->errstr // '';
+    $error    .= "MT error: $mterr\n" unless $mterr eq '';
+    $error    .= 'MT initialization arguments: '
+               . Data::Dumper::Dumper(\%args);
+    die $error;
 }
 
 
@@ -179,6 +191,16 @@ sub app {
     my $self     = shift;
     $self->{app} = shift if @_;
     $self->{app};
+}
+
+sub plugin {
+    my $self      = shift;
+    my $plugin_id = shift;
+    my ( $plugin ) = MT->component($plugin_id)
+                  || MT::Plugin->select($plugin_id);
+    die "Could not find plugin $plugin"
+        unless $plugin;
+    $plugin;
 }
 
 
