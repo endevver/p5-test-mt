@@ -308,16 +308,15 @@ sub config_file {
     return $self->SUPER::config_file() if $self->SUPER::config_file;
     return $self->SUPER::config_file( file(@_) ) if @_;
 
-    my @paths = grep { -e -r -s } 
-                 map { file( @$_ )->absolute( $self->mt_dir ) }
-                 (
-                    defined $ENV{MT_CONFIG} ? [ $ENV{MT_CONFIG} ] : (),
-                    [ $self->test_dir, $self->ConfigFile ]
+    my @paths = grep { -e -r -s }
+                map { file( $_ )->absolute( $self->mt_dir ) }
+                (
+                    ( $ENV{MT_CONFIG} // () ),
+                    file( $self->test_dir, $self->ConfigFile ),
                 );
-
-    $self->config_file( $ENV{MT_CONFIG} = shift @paths );
+    my $path  = shift @paths;
+    $self->config_file( $ENV{MT_CONFIG} = "$path" );
 }
-
 
 =head2 ds_dir
 
