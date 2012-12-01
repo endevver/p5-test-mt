@@ -17,8 +17,7 @@ use Test::MT::Util  qw( debug_handle );
 use Class::Load     ();
 use Data::Dumper    ();
 # use Package::Stash;
-
-use version 0.77; our $VERSION = qv('v1.3.1');
+use version 0.77; our $VERSION = qv('v1.3.5');
 
 my $CLASS = __PACKAGE__;
 our ( @EXPORT );
