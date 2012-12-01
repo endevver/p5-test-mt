@@ -222,9 +222,9 @@ sub sync_ref_db {
 
     # DB file exists, is read/write and non-zero-byte length
     if ( ! -e "$ref_db" and -e -r -s "$db_file" ) {
-        ###l4p $logger->info('Found existing DB to use: '.$db_file );
+        ###l4p $l4p->debug('Found existing DB to use: '.$db_file );
 
-        ###l4p $logger->info("Copying existing DB to ref DB $ref_db ("
+        ###l4p $l4p->debug("Copying existing DB to ref DB $ref_db ("
         ###l4p              .(-s $ref_db)." bytes); copying to $db_file");
         # unlink( $ref_db ) if -e -w $ref_db;
         cp( $db_file, $ref_db );
@@ -467,7 +467,7 @@ sub init_data {
 sub progress {
     DEBUG and Carp::carp( join('; ', @_));
 }
- 
+
 sub show_variables {
     my $self = shift;
     return unless DEBUG;

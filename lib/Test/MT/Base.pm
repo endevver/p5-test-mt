@@ -4,20 +4,6 @@ package Test::MT::Base;
 
 Test::MT::Base - Abstract base class for all MT tests
 
-=head1 SYNOPSIS
-
-   use Test::MT::Base;
-
-   # Brief but working code example(s) here showing the most common usage(s)
-   # This section will be as far as many users bother reading, so make it as
-   # educational and exemplary as possible.
-
-=head1 DESCRIPTION
-
-A full description of the module and its features.
-
-May include numerous subsections (i.e., =head2, =head3, etc.).
-
 =cut
 
 ##########################################################################
@@ -42,7 +28,6 @@ use Test::MT::ConfigMgr;
 our ( @ISA, @EXPORT, $CLASS );
 
 use parent qw( Test::Builder::Module );
-
 # our @ISA = qw( Test::Builder::Module );
 # use Exporter qw( import );
 
@@ -185,14 +170,15 @@ sub init_cms {
 
 
 sub env {
-    my $self = shift;
-    return @_ ? $self->{env} = shift : $self->{env};
+    my $self     = shift;
+    $self->{env} = shift if @_;
+    $self->{env};
 }
 
-
 sub app {
-    my $self = shift;
-    return @_ ? $self->{app} = shift : $self->{app};
+    my $self     = shift;
+    $self->{app} = shift if @_;
+    $self->{app};
 }
 
 
@@ -213,30 +199,12 @@ BEGIN {
 
 }
 
-
-# addlibs was taken out of a BEGIN block and enclosed as a subroutine
-# Not sure that it's needed and it may actually make things more difficult
-# by overly including paths into @INC, masking issues...
-sub addlibs {
-    my $mt = $ENV{MT_HOME};
-    my @test_libs = (
-        "${mt}lib",     "${mt}extlib",      # MT core library
-        "${mt}t/lib",   "${mt}t/extlib",    # MT test library
-    );
-
-    $Bin =~ s{/*$}{/}i;
-    if ( $Bin ne $mt ) { # We may be running a plugin's test
-        unshift( @test_libs, (
-            "${Bin}../lib",  "${Bin}../extlib",    # Plugin's core library
-            "${Bin}lib",     "${Bin}extlib"        # Plugin's test library
-        ));
-    }
-    unshift( @INC, ( grep {-d $_ } @test_libs ));
-    
-}
-
-
 1;
 
 __END__
 
+=head1 SYNOPSIS
+
+   use Test::MT::Base;
+
+=cut

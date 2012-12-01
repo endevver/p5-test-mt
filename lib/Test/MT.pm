@@ -4,20 +4,6 @@ package Test::MT;
 
 Test::MT - MT-specific testing framework, subclass of Test::Builder
 
-=head1 SYNOPSIS
-
-   use Test::MT;
-
-   # Brief but working code example(s) here showing the most common usage(s)
-   # This section will be as far as many users bother reading, so make it as
-   # educational and exemplary as possible.
-
-=head1 DESCRIPTION
-
-Test::MT is a subclass of Test::Builder::Module (and by extension, Exporter)
-which provides MT-specific functions for testing the core application and its
-plugins.
-
 =cut
 
 use 5.010_001;      # Minimum perl version is 5.10.1
@@ -33,10 +19,6 @@ use Data::Dumper    ();
 # use Package::Stash;
 
 use version 0.77; our $VERSION = qv('v1.3.1');
-
-# local $SIG{__WARN__} = \&Carp::cluck;
-# local $SIG{__DIE__} = \&Carp::confess;
-
 
 my $CLASS = __PACKAGE__;
 our ( @EXPORT );
@@ -332,3 +314,10 @@ sub get_tmpl_error { return "$tmpl_err" }
 1;
 
 __END__
+
+=head1 SYNOPSIS
+
+
+=head1 DESCRIPTION
+
+=cut

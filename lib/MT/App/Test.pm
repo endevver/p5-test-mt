@@ -88,10 +88,11 @@ sub init {
         my $mt       = shift;
         my ($param)  = @_;
         $Database = delete $param->{TestDatabase};
-        warn 'Got $Database from init_config params: '.$Database;
+        warn "Got $Database from init_config params: ".$Database;
 
         unless ( $mt->SUPER::init_config( $param ) ) {
-            warn 'Superclass init_config returned false.  Error? '.$mt->errstr;
+            warn 'Superclass init_config returned false. '
+                .( $mt->errstr ? 'Error was '.$mt->errstr : 'No error tho.');
             return;
         }
 
