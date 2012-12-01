@@ -104,23 +104,20 @@ my @ENV_VARS = qw( MT_HOME  MT_TEST_DIR  MT_CONFIG  MT_DS_DIR  MT_REF_DIR );
 use Log::Log4perl qw( :resurrect );            # Works on this module
 ###l4p use Log::Log4perl::Resurrector;         # Works on modules which use this module
 ###l4p use MT::Log::Log4perl qw( l4mtdump );
-    for (
-            # Use different DB filenames for each process to allow
-            # parallel test execution.  e.g. mt-727181.db
-            { DBFile        => "mt-$$.db"                            },
-            { ConfigFile    => 'test.cfg'                            },
-            { DataClass     => do {
-                                    (my $p = __PACKAGE__) =~ s{Environment}{Data::YAML};
-                                    $p;
-                                },
-            }
-        );
 ###l4p our $l4p = MT::Log::Log4perl->new();
 
 our $CLASS = __PACKAGE__;
 
 $CLASS->mk_classdata( %$_ )
+for (
+        # Use different DB filenames for each process to allow
+        # parallel test execution.  e.g. mt-727181.db
+        { DBFile          =>   "mt-$$.db"                   },
+        { ConfigFile      =>   'test.cfg'                   },
         { DatabaseClass   =>   "${CLASS}::Database"         },
+        { DataClass       =>   'Test::MT::Data::YAML'       },
+);
+
 
 =head1 SUBROUTINES/METHODS
 
@@ -135,6 +132,7 @@ sub init {
     ###l4p $l4p ||= MT::Log::Log4perl->new(); $l4p->trace();
     $self->init_paths() or return;
     $self->setup_db_file();
+    ###l4p $l4p->info('Environment initialized');
     $self;
 }
 
@@ -195,7 +193,7 @@ sub setup_db_file {
     my $db_file    = $self->db_file;
     ###l4p $l4p ||= MT::Log::Log4perl->new(); $l4p->trace();
 
-    eval "require $data_class;"
+    eval "require $data_class; 1;"
         or die "Could not load $data_class: $@";
     my $key     = $data_class->Key;
     my $ref_db  = file( $self->ref_dir, "$key.db" );
@@ -277,9 +275,12 @@ sub test_dir {
     my $self = shift;
     return $self->SUPER::test_dir() if $self->SUPER::test_dir;
     return $self->SUPER::test_dir( dir(@_) ) if @_;
+    my $test_dir = file($0)->parent;
 
-    $ENV{MT_TEST_DIR} ||= file($0)->parent->absolute( $self->mt_dir )->stringify;
-    return $self->test_dir( $ENV{MT_TEST_DIR} );  # From FindBin
+    $test_dir    = $test_dir->parent
+        unless 't' eq $test_dir->basename;
+    $ENV{MT_TEST_DIR} ||= $test_dir->absolute( $self->mt_dir )->stringify;
+    return $self->test_dir( $ENV{MT_TEST_DIR} );
 }
 
 
