@@ -104,8 +104,6 @@ my @ENV_VARS = qw( MT_HOME  MT_TEST_DIR  MT_CONFIG  MT_DS_DIR  MT_REF_DIR );
 use Log::Log4perl qw( :resurrect );            # Works on this module
 ###l4p use Log::Log4perl::Resurrector;         # Works on modules which use this module
 ###l4p use MT::Log::Log4perl qw( l4mtdump );
-###l4p our $logger = MT::Log::Log4perl->new();
-
 __PACKAGE__->mk_classdata( %$_ )
     for (
             # Use different DB filenames for each process to allow
@@ -119,6 +117,8 @@ __PACKAGE__->mk_classdata( %$_ )
                                 },
             }
         );
+###l4p our $l4p = MT::Log::Log4perl->new();
+
 
 =head1 SUBROUTINES/METHODS
 
@@ -130,6 +130,7 @@ locate our own modules.
 =cut
 sub init {
     my $self = shift;
+    ###l4p $l4p ||= MT::Log::Log4perl->new(); $l4p->trace();
     $self->init_paths() or return;
     $self->setup_db_file();
     $self;
@@ -169,6 +170,7 @@ The directory containing our pristine test Database (if using SQLite)
 =cut
 sub init_paths {
     my $self = shift;
+    ###l4p $l4p ||= MT::Log::Log4perl->new(); $l4p->trace();
     $ENV{MT_HOME}     = $self->mt_dir();
     $ENV{MT_TEST_DIR} = $self->test_dir();
     $ENV{MT_CONFIG}   = $self->config_file();
@@ -189,9 +191,8 @@ sub setup_db_file {
     my $self       = shift;
     my $data_class = shift || $self->DataClass();
     my $db_file    = $self->db_file;
-    ###l4p $logger ||= MT::Log::Log4perl->new(); $logger->trace();
+    ###l4p $l4p ||= MT::Log::Log4perl->new(); $l4p->trace();
 
-    ###l4p $logger->info("Initializing data class $data_class");
     eval "require $data_class;"
         or die "Could not load $data_class: $@";
     my $key     = $data_class->Key;
@@ -216,6 +217,7 @@ sub sync_ref_db {
     my $self    = shift;
     my $ref_db  = shift;
     my $db_file = $self->db_file;
+    ###l4p $l4p ||= MT::Log::Log4perl->new(); $l4p->trace();
 
     state %ref_db;
     $ref_db = $ref_db{Scalar::Util::refaddr($self)} ||= $ref_db;
