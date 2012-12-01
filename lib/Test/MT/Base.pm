@@ -11,19 +11,19 @@ Test::MT::Base - Abstract base class for all MT tests
 use 5.010_001;
 use strict;
 use warnings;
+use Try::Tiny;
 use FindBin                 qw($Bin);
-use Try::Tiny               ();
 use Carp                    ();
 use Scalar::Util            ();
 use Test::MT::Util          ();
 use Class::Load             qw( load_class );
 use Package::Stash;
 use autodie;
-use Data::Printer           ();
 use Test::Most;
 use Test::Builder;
 use Test::MT;
 use Test::MT::ConfigMgr;
+use Data::Printer;
 
 our ( @ISA, @EXPORT, $CLASS );
 
