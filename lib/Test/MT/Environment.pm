@@ -104,13 +104,11 @@ my @ENV_VARS = qw( MT_HOME  MT_TEST_DIR  MT_CONFIG  MT_DS_DIR  MT_REF_DIR );
 use Log::Log4perl qw( :resurrect );            # Works on this module
 ###l4p use Log::Log4perl::Resurrector;         # Works on modules which use this module
 ###l4p use MT::Log::Log4perl qw( l4mtdump );
-__PACKAGE__->mk_classdata( %$_ )
     for (
             # Use different DB filenames for each process to allow
             # parallel test execution.  e.g. mt-727181.db
             { DBFile        => "mt-$$.db"                            },
             { ConfigFile    => 'test.cfg'                            },
-            { DatabaseClass => join('::', __PACKAGE__, 'Database')   },
             { DataClass     => do {
                                     (my $p = __PACKAGE__) =~ s{Environment}{Data::YAML};
                                     $p;
@@ -119,6 +117,10 @@ __PACKAGE__->mk_classdata( %$_ )
         );
 ###l4p our $l4p = MT::Log::Log4perl->new();
 
+our $CLASS = __PACKAGE__;
+
+$CLASS->mk_classdata( %$_ )
+        { DatabaseClass   =>   "${CLASS}::Database"         },
 
 =head1 SUBROUTINES/METHODS
 
@@ -427,13 +429,13 @@ sub init_upgrade {
     require MT::Upgrade;
     MT::Upgrade->do_upgrade(
         Install => 1,
-        App     => __PACKAGE__,
+        App     => $CLASS,
         User    => {},
         Blog    => {}
     );
 
     MT->config->PluginSchemaVersion( {} );
-    MT::Upgrade->do_upgrade( App => __PACKAGE__, User => {}, Blog => {} );
+    MT::Upgrade->do_upgrade( App => $CLASS, User => {}, Blog => {} );
 
     # eval {
         # line __LINE__ __FILE__
