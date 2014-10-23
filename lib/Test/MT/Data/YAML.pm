@@ -117,8 +117,8 @@ sub install {
     foreach ( @ordered_types ) {
         my ( $type, $plural ) = each %$_;
         DEBUG and diag "Starting $type creation...";
-        $env_data->{$plural} = $self->create_objects( $type )
-            if MT->model( $type ) && $data->{objects}{$plural};
+        $env_data->{$plural} = $self->create_objects( $type, $plural )
+            if $data->{objects}{$plural} && MT->model( $type );
     }
     $self->env_data( $env_data );
 }
@@ -130,11 +130,11 @@ DOCUMENTATION NEEDED
 
 =cut
 sub create_objects {
-    my $self        = shift;
-    my ( $kind )    = @_;
-    my $plural      = $kind eq 'entry' ? 'entries' : "${kind}s";
-    my $roster = $self->data->{objects}{$plural};
-    my $meth        = $self->can('create_' . $kind);
+    my $self     = shift;
+    my ( $kind, $plural ) = @_;
+    $plural    ||= $kind eq 'entry' ? 'entries' : "${kind}s";
+    my $roster   = $self->data->{objects}{$plural};
+    my $meth     = $self->can('create_' . $kind);
     my %created;
     foreach my $key ( keys %$roster ) {
         my $member_info = $roster->{$key};

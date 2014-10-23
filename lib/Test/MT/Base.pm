@@ -120,19 +120,26 @@ sub construct_default {
     }
     catch { Carp::confess( "Error initializing test environment: $_" ) };
     $test->env( $env );
+    # use Data::Dumper; print Dumper( $env );
 
     my $app
         =  try { $test->init_app( TestDatabase =>  $env->db_file ) }
          catch { Carp::confess( "Error initializing test app: $_" ) };
     $test->app( $app );
+    # use Data::Dumper; print Dumper( $app );
+
+    try   { $env->init_upgrade() }
+    catch { Carp::confess("Could not upgrade DB") };
 
     my $data
         =  try { $env->init_data( file => './data/bootstrap_env.yaml' ) }
          catch { Carp::confess( "Error initializing test data: $_" ) };
+    # use Data::Dumper; print Dumper( $data );
 
     my $env_data
         =  try { $data->install(); }
          catch { Carp::confess( "Could not create \$env_data: $_" ) };
+    # use Data::Dumper; print Dumper( $env_data );
 
     try   { $env->init_upgrade() }
     catch { Carp::confess("Could not upgrade DB") };

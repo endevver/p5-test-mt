@@ -119,6 +119,10 @@ for (
 );
 
 
+
+printf STDERR "%-20s = %s\n", $_,  $CLASS->$_
+    foreach qw(DBFile ConfigFile DatabaseClass DataClass DBFile );
+
 =head1 SUBROUTINES/METHODS
 
 =head2 init
@@ -313,12 +317,14 @@ sub config_file {
     return $self->SUPER::config_file() if $self->SUPER::config_file;
     return $self->SUPER::config_file( file(@_) ) if @_;
 
-    my @paths = grep { -e -r -s }
+    my @paths = grep { defined($_) }
+                grep { -e -r -s }
                 map { file( $_ )->absolute( $self->mt_dir ) }
                 (
                     ( $ENV{MT_CONFIG} // () ),
                     file( $self->test_dir, $self->ConfigFile ),
                 );
+    die "No config file paths" unless @paths;
     my $path  = shift @paths;
     $self->config_file( $ENV{MT_CONFIG} = "$path" );
 }
@@ -481,12 +487,12 @@ sub show_variables {
        qw(test_dir ConfigFile mt_dir);
 }
 
-sub DESTROY {
-    my $self = shift;
-    return unless -e $self->db_file;
-    DEBUG and warn "Removing database ".$self->db_file;
-    unlink( $self->db_file );
-}
+# sub DESTROY {
+#     my $self = shift;
+#     return unless -e $self->db_file;
+#     DEBUG and warn "Removing database ".$self->db_file;
+#     unlink( $self->db_file );
+# }
 
 1;
 
