@@ -17,14 +17,14 @@ use Test::MT::Util  qw( debug_handle );
 use Class::Load     ();
 use Data::Dumper    ();
 # use Package::Stash;
-use version 0.77; our $VERSION = qv('v1.3.5');
+use version 0.77; our $VERSION = qv('v1.3.6');
 
 my $CLASS = __PACKAGE__;
 our ( @EXPORT );
 
 BEGIN {
     @EXPORT = (
-        @Test::Most::EXPORT, 
+        @Test::Most::EXPORT,
         'Dumper',
         qw(
               is_object        out_like      err_like      tmpl_out_like
