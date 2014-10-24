@@ -18,7 +18,7 @@ This class is an MT::App subclass responsible for initialization and
 execution of test application.
 
 =cut
-use 5.010_001;
+use 5.008_009;
 use strict;
 use warnings;
 # Handle cwd = MT_DIR, MT_DIR/t

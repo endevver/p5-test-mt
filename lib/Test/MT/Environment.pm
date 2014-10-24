@@ -80,7 +80,7 @@ Test data
 
 sub DEBUG() { 0 }
 
-use 5.010_001;
+use 5.008_009;
 use strict;
 use warnings;
 use Data::Dumper;
@@ -223,8 +223,8 @@ sub sync_ref_db {
     my $db_file = $self->db_file;
     ###l4p $l4p ||= MT::Log::Log4perl->new(); $l4p->trace();
 
-    state %ref_db;
-    $ref_db = $ref_db{Scalar::Util::refaddr($self)} ||= $ref_db;
+    my $ref_dbs = $self->{__ref_dbs} || {};
+    $ref_db = $ref_dbs->{Scalar::Util::refaddr($self)} ||= $ref_db;
 
     # DB file exists, is read/write and non-zero-byte length
     if ( ! -e "$ref_db" and -e -r -s "$db_file" ) {
@@ -321,7 +321,7 @@ sub config_file {
                 grep { -e -r -s }
                 map { file( $_ )->absolute( $self->mt_dir ) }
                 (
-                    ( $ENV{MT_CONFIG} // () ),
+                    ( $ENV{MT_CONFIG} || () ),
                     file( $self->test_dir, $self->ConfigFile ),
                 );
     die "No config file paths" unless @paths;

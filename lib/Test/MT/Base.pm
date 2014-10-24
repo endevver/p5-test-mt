@@ -8,7 +8,7 @@ Test::MT::Base - Abstract base class for all MT tests
 
 ##########################################################################
 
-use 5.010_001;
+use 5.008_009;
 use strict;
 use warnings;
 use Try::Tiny;
@@ -23,7 +23,7 @@ use Test::Most;
 use Test::Builder;
 use Test::MT;
 use Test::MT::ConfigMgr;
-use Data::Printer;
+# use Data::Printer;
 
 our ( @ISA, @EXPORT, $CLASS );
 
@@ -35,7 +35,7 @@ BEGIN {
     # @ISA    ||= qw(Test::Builder::Module);
     $CLASS  = __PACKAGE__;
     @EXPORT = (
-        @Test::Most::EXPORT, 
+        @Test::Most::EXPORT,
         @Test::MT::EXPORT,
         qw(
             construct_default
@@ -78,26 +78,26 @@ sub import_extra {
     {
         no strict 'refs';
         unshift( @{$package."::ISA"}, $class )
-            unless $class ~~ @{$package."::ISA"};
+            unless grep { m/^$class$/ } @{$package."::ISA"};
     }
     # Default pragmas for all tests
     strict->import;
     warnings->import;
-    feature->import(':5.10');   # use feature qw(switch say state)
+    # feature->import(':5.10');   # use feature qw(switch say state)
     # mro->import('c3');          # enable C3 MRO for this class
     # mro::set_mro( $package, 'c3' );
     Carp->import(qw( carp croak confess cluck ));
     Test::Most->import;
     Test::More->import;
     Scalar::Util->import(qw( blessed looks_like_number ));
-    Data::Printer->import({
-        return_value => 'pass'
-    });
+    # Data::Printer->import({
+    #     return_value => 'pass'
+    # });
 
     $test->exported_to($package);
     # my( @imports ) = $class->_strip_imports( \@_ );
 
-    if ( 'tests' ~~ @_  ) {
+    if ( grep { m/^tests$/ } @_  ) {
         $test->plan( @_ ) unless $test->has_plan;
     }
     else {
@@ -171,7 +171,8 @@ sub init_app {
     }
 
     my $error  = '';
-    my $mterr  = MT->errstr // '';
+    my $mterr  = MT->errstr;
+    $mterr     = '' unless defined($mterr);
     $error    .= "MT error: $mterr\n" unless $mterr eq '';
     $error    .= 'MT initialization arguments: '
                . Data::Dumper::Dumper(\%args);
@@ -223,7 +224,7 @@ sub finish { shift }
 BEGIN {
     my $mt = $ENV{MT_HOME}
         or die "Please set your MT_HOME environment variable";
-    $mt =~ s{/*$}{/}x;      # Force trailing slash
+    $mt =~ s!/*$!/!x;      # Force trailing slash
     $ENV{MT_HOME} = $mt;
 
 }

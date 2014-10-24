@@ -12,7 +12,7 @@ Test::MT::ConfigMgr
 
 use strict;
 use warnings;
-use feature qw( state say );
+# use feature qw( state say );
 use parent 'MT::ConfigMgr';
 
 # ALL YOUR CONFIG ARE BELONG TO US!
@@ -21,11 +21,11 @@ use parent 'MT::ConfigMgr';
 # many, many ways...
 $MT::ConfigMgr::cfg = __PACKAGE__->new;
 
+# Static variable holding our per-process Database config
+my $Database;
+
 sub read_config_file {
     my $class = shift;
-
-    # Static variable holding our per-process Database config
-    state $Database;
 
     # Let MT::ConfigMgr do what it normally does in reading the config
     $class->SUPER::read_config_file(@_);
@@ -44,9 +44,9 @@ sub read_config_file {
 
     if ( ($Database||$file_val) ne $file_val ) {
         $mgr->set( 'Database', $Database );
-        say STDERR
+        print STDERR
               __PACKAGE__
-            . ": Database config value updated from $file_val to $Database"
+            . ": Database config value updated from $file_val to $Database\n"
             if $mgr->get('DebugMode');
     }
 }

@@ -10,7 +10,7 @@ Tests for successful compilation of all classes in the distribution
 
 =cut
 
-use 5.010_001;
+use 5.008_009;
 use strict;
 use warnings;
 use Test::More;

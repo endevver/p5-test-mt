@@ -6,7 +6,7 @@ Test::MT - MT-specific testing framework, subclass of Test::Builder
 
 =cut
 
-use 5.010_001;      # Minimum perl version is 5.10.1
+use 5.008_009;      # Minimum perl version is 5.8.9
 use strict;
 use warnings;
 use Test::Most;
@@ -51,7 +51,7 @@ sub import {
     # Default pragmas for all tests
     strict->import;
     warnings->import;
-    feature->import(':5.10');   # use feature qw(switch say state)
+    # feature->import(':5.10');   # use feature qw(switch say state)
 
     # Default module functions for all tests
     # Done by Exporter above.....Test::Most->import;
