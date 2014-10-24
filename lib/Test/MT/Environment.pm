@@ -121,7 +121,7 @@ for (
 
 
 printf STDERR "%-20s = %s\n", $_,  $CLASS->$_
-    foreach qw(DBFile ConfigFile DatabaseClass DataClass DBFile );
+    foreach qw(DBFile ConfigFile DatabaseClass DataClass );
 
 =head1 SUBROUTINES/METHODS
 
@@ -203,7 +203,7 @@ sub setup_db_file {
     my $ref_db  = file( $self->ref_dir, "$key.db" );
 
     # An empty database is just as good as a non-existent one...
-    -e -z $_ and unlink($_) for ( $db_file, $ref_db );
+    -e $_ && -z $_ && unlink($_) for ( $db_file, $ref_db );
 
     $self->sync_ref_db( $ref_db );
 
@@ -227,7 +227,7 @@ sub sync_ref_db {
     $ref_db = $ref_dbs->{Scalar::Util::refaddr($self)} ||= $ref_db;
 
     # DB file exists, is read/write and non-zero-byte length
-    if ( ! -e "$ref_db" and -e -r -s "$db_file" ) {
+    if ( ! -e "$ref_db" and -e "$db_file" and -r "$db_file" and -s "$db_file" ) {
         ###l4p $l4p->debug('Found existing DB to use: '.$db_file );
 
         ###l4p $l4p->debug("Copying existing DB to ref DB $ref_db ("
@@ -235,7 +235,7 @@ sub sync_ref_db {
         # unlink( $ref_db ) if -e -w $ref_db;
         cp( $db_file, $ref_db );
     }
-    elsif ( ! -e "$db_file" and -e -r -s $ref_db ) {
+    elsif ( ! -e "$db_file" and -e $ref_db and -r $ref_db and -s $ref_db ) {
         cp( $ref_db, $db_file );
     }
 }
@@ -318,7 +318,7 @@ sub config_file {
     return $self->SUPER::config_file( file(@_) ) if @_;
 
     my @paths = grep { defined($_) }
-                grep { -e -r -s }
+                grep { -e $_ && -r $_ && -s $_ }
                 map { file( $_ )->absolute( $self->mt_dir ) }
                 (
                     ( $ENV{MT_CONFIG} || () ),

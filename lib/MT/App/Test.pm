@@ -24,6 +24,7 @@ use warnings;
 # Handle cwd = MT_DIR, MT_DIR/t
 use lib 't/lib', 'extlib', 'lib', '../lib', '../extlib';
 
+use MT;
 use base qw( MT::App );
 
 use Data::Dumper;
